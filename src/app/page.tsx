@@ -1,9 +1,7 @@
-import LoginForm from './LoginForm';
+import LandingPage from "./LandingPage";
 
-export default function LoginPage() {
-  return (
-
-        <LoginForm />
-
-  );
+export default function Landing() {
+  return(
+    <LandingPage/>
+  )
 }

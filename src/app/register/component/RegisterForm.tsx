@@ -191,7 +191,8 @@ export default function RegisterForm() {
     {/* Overlay untuk bulat hitam + teks */}
     <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="w-28 h-28 bg-black rounded-full mb-4"></div>
-        <h1 className="text-4xl font-light text-white">S T A S H I F Y</h1>
+        <h1 className="text-4xl font-light text-white">T r a c k I t</h1>
+          <p>Track Smarter, Stock Better</p>
     </div>
 </div>
 </div>
