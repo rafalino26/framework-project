@@ -1,102 +1,156 @@
 "use client";
 
-import Link from 'next/link';
-import { useState } from 'react';
-import { FaUser, FaLock } from 'react-icons/fa';
-import { IoEyeOff, IoEye } from 'react-icons/io5';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 
-export default function LoginForm() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const [token, setToken] = useState<string | null>(null);
 
-  const router = useRouter(); // Ini penting biar bisa navigate manual
+  useEffect(() => {
+    setToken(sessionStorage.getItem("token"));
+    if (sessionStorage.getItem("token")) {
+      router.push("");
+    }
+  }, []);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePassword = (password: string): boolean => {
+    return password.length >= 6;
+  };
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
 
-    if (!username || !password) {
-      setError('Username and password are required');
+    if (!validateEmail(email)) {
+      setError("Invalid email format");
+      return;
+    }
+    if (!validatePassword(password)) {
+      setError("Password must be at least 6 characters");
       return;
     }
 
-    if (username === 'trackit' && password === 'trackit') {
-      alert('Login Success!');
-      setError('');
-      router.push('/dashboard/home'); // Pindah halaman setelah login sukses
-    } else {
-      setError('Incorrect Username or Password');
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 400) throw new Error("Invalid credentials");
+        if (response.status === 401) throw new Error("Unauthorized access");
+        if (response.status === 500)
+          throw new Error("Server error, try again later");
+        throw new Error(data.message || "Login failed");
+      }
+
+      sessionStorage.setItem("token", data.token);
+      router.push("/dashboard");
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred");
+      }
     }
   };
 
   return (
-    <div className="min-h-screen flex bg-white">
-      <div className="w-1/2 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          <h2 className="text-5xl font-bold bg-black bg-clip-text text-transparent mb-6 leading-tight">Login</h2>
+    <div className="flex min-h-screen bg-[#EDF0F2] items-center justify-center p-4 font-sans">
+      <div className="bg-white w-11/12 md:w-5/6 lg:w-3/4 h-auto md:h-4/5 flex flex-col md:flex-row rounded-xl shadow-lg overflow-hidden">
+        {/* Login Form */}
+        <div className="w-full md:w-2/5 p-10 flex flex-col justify-center">
+          <div className="flex flex-col items-start">
+            <div className="w-10 h-10 bg-[#94FCF6] mb-2"></div>
+            <h2 className="text-2xl font-semibold text-black font-sans">
+              Login
+            </h2>
+          </div>
 
-          {error && (
-            <div className="text-red-600 bg-red-100 p-2 rounded text-center mb-4">
-              {error}
-            </div>
-          )}
+          <p className="text-black text-sm mb-6 font-sans">
+            See your growth and get support!
+          </p>
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="relative">
-              <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
-              <input
-                type="text"
-                className="w-full pl-10 pr-4 py-2 rounded-md focus:outline-none border bg-white placeholder-gray-500 text-black"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Username"
-              />
-            </div>
+          {error && <p className="text-red-500 text-sm font-sans">{error}</p>}
 
-            <div className="relative">
-              <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
-              <input
-                type={showPassword ? "text" : "password"}
-                className="w-full pl-10 pr-10 py-2 focus:outline-none border rounded-md bg-white placeholder-gray-500 text-black"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-              />
-              <span
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <IoEye /> : <IoEyeOff />}
-              </span>
+          <form onSubmit={handleLogin}>
+            <label className="text-sm font-medium text-black font-sans">
+              Email*
+            </label>
+            <input
+              type="email"
+              placeholder="sarah@gmail.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 font-sans"
+            />
+
+            <label className="text-sm font-medium text-black font-sans">
+              Password*
+            </label>
+            <input
+              type="password"
+              placeholder="gal&sarah"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 font-sans"
+            />
+
+            <div className="flex justify-between items-center text-sm mb-4 text-black font-sans">
+              <div>
+                <input type="checkbox" id="remember" className="mr-2" />
+                <label htmlFor="remember">Remember me</label>
+              </div>
+              <a href="#" className="text-black hover:underline">
+                Forgot password?
+              </a>
             </div>
 
             <button
               type="submit"
-              className="w-60 ml-25 bg-black text-white py-2 rounded-full hover:bg-gray-700"
+              className="w-full bg-[#101540] text-white p-2 rounded-2xl hover:bg-[#131313] disabled:bg-gray-500 font-sans"
+              disabled={loading}
             >
-              Login
+              {loading ? "Logging in..." : "Login"}
             </button>
           </form>
 
-          <p className="mt-4 text-center text-sm text-gray-700">
-            Don't have an account?{' '}
-            <Link href="/register" className="text-black hover:underline">Register</Link>
+          <p className="text-sm text-center mt-4 text-black font-sans">
+            Not registered yet?{" "}
+            <a
+              href="/register"
+              className="text-black font-semibold hover:underline"
+            >
+              Create a new account
+            </a>
           </p>
         </div>
-      </div>
 
-      <div className="w-1/2 relative flex items-center justify-center">
-        <img 
-          src="bekbek.jpg" 
-          alt="Background Image" 
-          className="w-full h-[100vh] object-cover"
-        />
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <div className="w-28 h-28 bg-black rounded-full mb-4"></div>
-          <h1 className="text-4xl font-light text-white">T r a c k I t</h1>
-          <p>Track Smarter, Stock Better</p>
+        {/* Image Container */}
+        <div className="w-full md:w-3/5 bg-white flex items-center justify-center p-4">
+          <Image
+            src="/image 3.png"
+            alt="Login Illustration"
+            width={600}
+            height={600}
+            className="w-full h-auto object-cover"
+          />
         </div>
       </div>
     </div>
