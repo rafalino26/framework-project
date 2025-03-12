@@ -40,7 +40,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
     </div>
 </header>
-                <main className="flex-1 p-6 bg-[#C7DFEA]">{children}</main>
+                <main className="flex-1 p-6 bg-blue-50">{children}</main>
              
             </div>
         </div>

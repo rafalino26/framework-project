@@ -12,8 +12,6 @@ const menuItems = [
     { label: "Inventory", path: "/dashboard/inventory", icon: "/inventory.png", iconActive: "/inventory-black.png", tooltip: "Manage your inventory here" },
     { label: "Stock Entry", path: "/dashboard/stock-entry", icon: "/stockentry.png", iconActive: "/stockentry-black.png", tooltip: "Add new stock to your inventory" },
     { label: "Stock Update", path: "/dashboard/stock-update", icon: "/stockupdate.png", iconActive: "/stockupdate-black.png", tooltip: "Update your stock data" },
-    { label: "Market Price", path: "/dashboard/market-price", icon: "/marketprice.png", iconActive: "/marketprice-black.png", tooltip: "See latest market prices" },
-    { label: "HPP", path: "/dashboard/hpp", icon: "/hpp.png", iconActive: "/hpp-black.png", tooltip: "Calculate product cost (HPP)" },
     { label: "Report", path: "/dashboard/report", icon: "/report.png", iconActive: "/report-black.png", tooltip: "View business reports" },
     { label: "About Us", path: "/dashboard/about-us", icon: "/aboutus.png", iconActive: "/aboutus-black.png", tooltip: "Learn more about us" }
 ];
@@ -38,11 +36,10 @@ export default function Sidebar() {
     }, [hoveredItem]);
 
     return (
-        <div className="w-64 min-h-screen bg-[#255367] text-white p-5 flex flex-col">
+        <div className="w-64 min-h-screen bg-[#252432] text-white p-5 flex flex-col">
             {/* Wrapper flex untuk logo dan teks */}
             <div className="flex items-center space-x-3 mb-8">
-                <img src="/logostashify.png" alt="Logo" className="w-8 h-8" />
-                <h2 className={`text-2xl font-semibold ${poppins.className}`}>STASHIFY</h2>
+                <h2 className={`text-2xl font-semibold ${poppins.className}`}>TrackIt</h2>
             </div>
 
             <ul className="space-y-2 flex-1 overflow-y-auto">
