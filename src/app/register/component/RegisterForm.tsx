@@ -1,200 +1,217 @@
 "use client";
 
 import { useState } from "react";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
-import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 
-export default function RegisterForm() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [username, setUsername] = useState("");
-  const [emailOrPhone, setEmailOrPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-
-  const [errors, setErrors] = useState({
+export default function RegisterPage() {
+  const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    username: "",
-    emailOrPhone: "",
+    email: "",
+    phone: "",
     password: "",
-    confirmPassword: "",
+    agree: false,
   });
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const newErrors = {
-      firstName: "",
-      lastName: "",
-      username: "",
-      emailOrPhone: "",
-      password: "",
-      confirmPassword: "",
-    };
+    setError(null);
+    setSuccess(null);
 
-    if (!firstName) newErrors.firstName = "First name is required.";
-    if (!lastName) newErrors.lastName = "Last name is required.";
-    if (!username) newErrors.username = "Username or company name is required.";
-    if (!emailOrPhone) newErrors.emailOrPhone = "Email or phone number is required.";
-    if (password.length < 8) newErrors.password = "Password must be at least 8 characters.";
-    if (password !== confirmPassword) newErrors.confirmPassword = "Password confirmation does not match.";
-    
+    if (
+      !formData.firstName ||
+      !formData.lastName ||
+      !formData.email ||
+      !formData.phone ||
+      !formData.password
+    ) {
+      setError("All fields are required");
+      return;
+    }
 
-    setErrors(newErrors);
+    if (!formData.agree) {
+      setError("You must agree to the terms and policies");
+      return;
+    }
 
-    if (Object.values(newErrors).some((err) => err !== "")) return;
+    setLoading(true);
 
-    // Handle registrasi di sini (API call atau logika lainnya)
-    console.log({ firstName, lastName, username, emailOrPhone, password });
+    try {
+      const response = await fetch("https://your-api.com/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          password: formData.password,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Registration failed");
+      }
+
+      setSuccess("Registration successful! Redirecting...");
+      setTimeout(() => {
+        router.push("/login");
+      }, 2000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex bg-white">
-      {/* Kiri - Form Section */}
-      <div className="w-1/2 flex items-center justify-center p-8 pl-24">
-        <div className="w-full max-w-md">
-        <h2 className="text-5xl font-bold bg-black bg-clip-text text-transparent mb-6 leading-tight">
-  Register
-</h2>
+    <div className="flex min-h-screen bg-[#EDF0F2] items-center justify-center p-4 font-[Poppins]">
+      <div className="bg-white w-11/12 md:w-5/6 lg:w-3/4 h-auto md:h-4/5 flex flex-col md:flex-row rounded-xl shadow-lg overflow-hidden">
+        {/* Image Container (di kiri, lebih kecil) */}
+        <div className="w-full md:w-2/5 bg-white flex items-center justify-center p-4">
+          <Image
+            src="/image 3.png"
+            alt="Register Illustration"
+            width={500}
+            height={500}
+            className="w-full h-auto object-cover"
+          />
+        </div>
 
+        {/* Register Form (di kanan, lebih besar) */}
+        <div className="w-full md:w-3/5 p-10 flex flex-col justify-center">
+          <div className="flex flex-col items-start">
+            <div className="w-10 h-10 bg-[#94FCF6] mb-2"></div>
+            <h2 className="text-2xl font-medium text-black">Sign Up</h2>
+          </div>
 
-<form onSubmit={handleSubmit} className="space-y-4">
+          <p className="text-black text-lg font-medium mt-2">
+            Manage all your inventory efficiently
+          </p>
 
-{/* First Name & Last Name (Side by Side) */}
-<div className="flex space-x-5">
-    {/* First Name */}
-    <div className="w-44">
-        <label className="block text-sm text-gray-600 mb-1">First Name</label>
-        <input
-            type="text"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            className={`w-full p-1 border rounded-md focus:ring-2 placeholder:text-sm text-black focus:outline-none ${errors.firstName ? "ring-red-500" : "ring-blue-300"}`}
-            placeholder="Enter First Name"
-        />
-        {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
-    </div>
+          <p className="text-black text-sm mb-6">
+            Let's get you all set up so you can verify your personal account and
+            begin setting up your work profile.
+          </p>
 
-    {/* Last Name */}
-    <div className="w-44">
-        <label className="block text-sm text-gray-600 mb-1">Last Name</label>
-        <input
-            type="text"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            className={`w-full p-1 border rounded-md focus:ring-2 placeholder:text-sm text-black focus:outline-none ${errors.lastName ? "ring-red-500" : "ring-blue-300"}`}
-            placeholder="Enter Last Name"
-        />
-        {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
-    </div>
-</div>
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {success && <p className="text-green-500 text-sm">{success}</p>}
 
+          <form onSubmit={handleRegister}>
+            {/* First Name & Last Name */}
+            <div className="flex space-x-4">
+              <div className="w-1/2">
+                <label className="text-sm text-black">First Name</label>
+                <input
+                  type="text"
+                  name="firstName"
+                  placeholder="Enter your name"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <div className="w-1/2">
+                <label className="text-sm text-black">Last Name</label>
+                <input
+                  type="text"
+                  name="lastName"
+                  placeholder="Minimum 8 characters"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+            </div>
 
-{/* Username/Company Name */}
-<div className="w-10/12">
-    <label className="block text-sm text-gray-600 mb-1">Username/Company Name</label>
-    <input
-        type="text"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        className={`w-full p-1 border rounded-md focus:ring-2 placeholder:text-sm text-black focus:outline-none ${errors.username ? "ring-red-500" : "ring-blue-300"}`}
-        placeholder="Enter Username or Company Name"
-    />
-    {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
-</div>
+            {/* Email & Phone Number */}
+            <div className="flex space-x-4">
+              <div className="w-1/2">
+                <label className="text-sm text-black">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="Enter your email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <div className="w-1/2">
+                <label className="text-sm text-black">Phone No.</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  placeholder="Minimum 8 characters"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+            </div>
 
-{/* Email/Phone */}
-<div className="w-10/12">
-    <label className="block text-sm text-gray-600 mb-1">Email/Phone Number</label>
-    <input
-        type="text"
-        value={emailOrPhone}
-        onChange={(e) => setEmailOrPhone(e.target.value)}
-        className={`w-full p-1 border rounded-md focus:ring-2 placeholder:text-sm text-black focus:outline-none ${errors.emailOrPhone ? "ring-red-500" : "ring-blue-300"}`}
-        placeholder="Enter Email or Phone Number"
-    />
-    {errors.emailOrPhone && <p className="text-red-500 text-sm mt-1">{errors.emailOrPhone}</p>}
-</div>
+            {/* Password */}
+            <div>
+              <label className="text-sm text-black">Password</label>
+              <input
+                type="password"
+                name="password"
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
 
-{/* Password */}
-<div className="w-10/12">
-    <label className="block text-sm text-gray-600 mb-1">Password</label>
-    <div className="relative">
-        <input
-            type={showPassword ? "text" : "password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className={`w-full p-1 pr-10 border rounded-md focus:ring-2 placeholder:text-sm text-black focus:outline-none ${errors.password ? "ring-red-500" : "ring-blue-300"}`}
-            placeholder="Enter Password"
-        />
-        <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute top-1/2 transform -translate-y-1/2 right-3 text-gray-500"
-        >
-            {showPassword ? <FaEye /> : <FaEyeSlash />}
-        </button>
-    </div>
-    {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
-</div>
+            {/* Checkbox Agreement */}
+            <div className="flex items-center mb-4">
+              <input
+                type="checkbox"
+                name="agree"
+                id="agree"
+                checked={formData.agree}
+                onChange={handleChange}
+                className="mr-2"
+              />
+              <label htmlFor="agree" className="text-sm text-black">
+                I agree to all terms, privacy policies, and fees
+              </label>
+            </div>
 
-{/* Confirm Password */}
-<div className="w-10/12">
-    <label className="block text-sm text-gray-600 mb-1">Confirm Password</label>
-    <div className="relative">
-        <input
-            type={showConfirmPassword ? "text" : "password"}
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className={`w-full p-1 pr-10 border rounded-md focus:ring-2 placeholder:text-sm text-black focus:outline-none ${errors.confirmPassword ? "ring-red-500" : "ring-blue-300"}`}
-            placeholder="Confirm Password"
-        />
-        <button
-            type="button"
-            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute top-1/2 transform -translate-y-1/2 right-3 text-gray-500"
-        >
-            {showConfirmPassword ? <FaEye /> : <FaEyeSlash />}
-        </button>
-    </div>
-    {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
-</div>
+            {/* Sign Up Button (di kiri, lebih pendek) */}
+            <button
+              type="submit"
+              className="w-40 bg-[#101540] text-white p-2 rounded-2xl hover:bg-[#131313] disabled:bg-gray-500"
+              disabled={loading}
+            >
+              {loading ? "Signing up..." : "Sign Up"}
+            </button>
+          </form>
 
-{/* Register Button */}
-<button
-    type="submit"
-    className="w-52 ml-21 bg-black text-white py-2 mt-4 rounded-full hover:bg-gray-700"
->
-    Register
-</button>
-
-{/* Already Have Account */}
-<p className="-mt-1 mr-18 text-center text-sm text-gray-700">
-    Already have an account?{" "}
-    <Link href="/" className="text-black hover:underline">Login</Link>
-</p>
-</form>
+          {/* Sudah punya akun? */}
+          <p className="text-sm mt-4 text-black">
+            Already have an account?{" "}
+            <a href="/login" className="text-black font-medium hover:underline">
+              Log in
+            </a>
+          </p>
         </div>
       </div>
-
-      {/* Kanan - Profile & Title Section */}
-<div className="w-1/2 relative flex items-center justify-center">
-    <img 
-        src="bekbek.jpg" 
-        alt="Background Image" 
-        className="w-full h-[100vh] object-cover"
-    />
-    
-    {/* Overlay untuk bulat hitam + teks */}
-    <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <div className="w-28 h-28 bg-black rounded-full mb-4"></div>
-        <h1 className="text-4xl font-light text-white">T r a c k I t</h1>
-          <p>Track Smarter, Stock Better</p>
     </div>
-</div>
-</div>
   );
 }
