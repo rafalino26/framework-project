@@ -14,7 +14,9 @@ export default function LoginPage() {
             <h2 className="text-2xl font-semibold text-black">Login</h2>
           </div>
 
-          <p className="text-black text-sm mb-6">See your growth and get support!</p>
+          <p className="text-black text-sm mb-6">
+            See your growth and get support!
+          </p>
 
           <form action="/dashboard">
             <label className="text-sm font-medium text-black">Email*</label>
@@ -51,7 +53,10 @@ export default function LoginPage() {
 
           <p className="text-sm text-center mt-4 text-black">
             Not registered yet?{" "}
-            <Link href="/register" className="text-black font-semibold hover:underline">
+            <Link
+              href="/register"
+              className="text-black font-semibold hover:underline"
+            >
               Create a new account
             </Link>
           </p>
