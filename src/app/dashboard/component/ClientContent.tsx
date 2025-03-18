@@ -1,32 +1,19 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import HomeContent from "@/app/dashboard/component/pages/HomeContent";
-import InventoryContent from "@/app/dashboard/component/pages/InventoryContent";
-import StockEntryContent from "@/app/dashboard/component/pages/StockEntryContent";
-import StockUpdateContent from "@/app/dashboard/component/pages/StockUpdateContent";
-import ReportContent from "@/app/dashboard/component/pages/ReportContent";
-import AboutUsContent from "@/app/dashboard/component/pages/AboutUsContent";
+import { usePathname } from "next/navigation";
+import DashboardContent from "@/app/dashboard/component/pages/DashboardContent";
+import RoomContent from "@/app/dashboard/component/pages/RoomContent";
+import ScheduleContent from "@/app/dashboard/component/pages/ScheduleContent";
 
 export default function ClientContent() {
-    const { menu } = useParams();
+    const pathname = usePathname(); // 🔥 Gunakan pathname untuk mengecek URL
 
     const renderContent = () => {
-        switch (menu) {
-            case "inventory":
-                return <InventoryContent />;
-            case "stock-entry":
-                return <StockEntryContent />;
-            case "stock-update":
-                return <StockUpdateContent />;
-            case "report":
-                return <ReportContent />;
-            case "about-us":
-                return <AboutUsContent />;
-            default:
-                return <HomeContent />;
-        }
+        if (pathname === "/dashboard/room") return <RoomContent />;
+        if (pathname === "/dashboard/schedule") return <ScheduleContent />;
+        return <DashboardContent />;
     };
 
     return <>{renderContent()}</>;
 }
+

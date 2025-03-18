@@ -1,6 +1,6 @@
 "use client";
 
-const HomeContent = () => {
+const DashboardContent = () => {
     return (
         <div className="space-y-6">
             {/* Baris 1 - 2 Card Lebar */}
@@ -47,4 +47,4 @@ const HomeContent = () => {
     );
 };
 
-export default HomeContent;
+export default DashboardContent;
