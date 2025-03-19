@@ -1,5 +1,5 @@
 import DashboardLayout from "@/app/dashboard/component/DashboardLayout";
-import RoomContent from "@/app/dashboard/component/pages/RoomContent";
+import RoomContent from "@/app/dashboard/room/RoomContent";
 
 export default function RoomPage() {
     return (

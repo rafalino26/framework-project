@@ -4,17 +4,9 @@ import Sidebar from "./Sidebar";
 import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { Bell, Settings, ChevronDown } from "lucide-react";
+import Link from "next/link";
 
-const pageTitles: Record<string, string> = {
-  "/dashboard/home": "Home",
-  "/dashboard/inventory": "Inventory",
-  "/dashboard/stock-entry": "Stock Entry",
-  "/dashboard/stock-update": "Stock Update",
-  "/dashboard/market-price": "Market Price",
-  "/dashboard/hpp": "HPP",
-  "/dashboard/report": "Report",
-  "/dashboard/about-us": "About Us",
-};
+const pageTitles: Record<string, string> = {};
 
 export default function DashboardLayout({
   children,
@@ -22,7 +14,11 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const pageTitle = pageTitles[pathname] || "Dashboard";
+  const formattedTitle =
+  pageTitles[pathname] || pathname.split("/").pop()?.replace("-", " ") || "Dashboard";
+
+const pageTitle = formattedTitle.charAt(0).toUpperCase() + formattedTitle.slice(1);
+
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -46,7 +42,7 @@ export default function DashboardLayout({
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <header className="bg-blue-50 shadow p-4 flex justify-between items-center border-none border-gray-300">
-          <div className="text-xl text-black font-bold font-poppins">
+          <div className="text-[24px] text-black font-semibold font-poppins">
             {pageTitle}
           </div>
 
@@ -60,10 +56,11 @@ export default function DashboardLayout({
               </span>
             </div>
 
-            {/* Settings Icon */}
-            <button className="p-2 rounded-full bg-blue-100 hover:bg-gray-200 transition">
-              <Settings className="w-6 h-6 text-black" />
-            </button>
+            <Link href="/dashboard/settings">
+      <button className="p-2 rounded-full bg-blue-100 hover:bg-gray-200 transition">
+        <Settings className="w-6 h-6 text-black" />
+      </button>
+    </Link>
 
             {/* Profile Button */}
             <div className="relative" ref={dropdownRef}>
@@ -72,12 +69,12 @@ export default function DashboardLayout({
                 onClick={() => setDropdownOpen((prev) => !prev)}
               >
                 <img
-                  src="/profile.png"
+                  src="/profilepict1.png"
                   alt="User profile picture"
                   className="w-8 h-8 rounded-full border border-gray-400"
                 />
                 <span className="font-medium text-black font-poppins">
-                  John Doe
+                  Nezuko
                 </span>
                 <ChevronDown className="w-5 h-5 text-black" />
               </button>
@@ -85,9 +82,12 @@ export default function DashboardLayout({
               {/* Dropdown Menu */}
               {dropdownOpen && (
                 <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
-                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100 text-black font-poppins">
-                    Edit Profile
-                  </button>
+                  <Link
+                  href="/dashboard/editor-profile"
+                  className="block px-4 py-2 hover:bg-gray-100 text-black font-poppins"
+                >
+                  Edit Profile
+                </Link>
                   <button className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500 font-poppins">
                     Logout
                   </button>
