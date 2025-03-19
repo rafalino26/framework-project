@@ -38,7 +38,7 @@ export default function Sidebar() {
         <div className="w-60 min-h-screen bg-white p-5 flex flex-col border-r border-gray-200">
             {/* Header Sidebar */}
             <div className="flex items-center space-x-3 mb-4">
-                <h2 className={`text-[28px] font-semibold text-black ${poppins.className}`}>TrackIt</h2>
+                <h2 className={`text-[28px] font-semibold text-black ${poppins.className}`}>Sara</h2>
             </div>
             <hr className="border-gray-200" />
 

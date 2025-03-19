@@ -7,7 +7,7 @@ export default function LandingPage() {
     <div className="relative min-h-screen flex flex-col items-center justify-center bg-white">
       {/* Header */}
       <header className="absolute top-6 left-8 right-12 flex justify-between items-center z-10">
-        <h1 className="text-3xl text-black font-bold">TrackIt</h1>
+        <h1 className="text-3xl text-black font-bold">Sara</h1>
         <div className="flex space-x-4">
           <Link
             href="/login"
@@ -33,9 +33,10 @@ export default function LandingPage() {
       </div>
 
       <div className="relative z-10 text-center">
-        <h2 className="text-7xl text-black font-bold leading-snug">
-          Track <br /> your <br /> stock
+        <h2 className="text-6xl text-black font-bold leading-snug">
+          Welcome to Sara
         </h2>
+        <h6 className="text-4xl text-black font-bold leading-snug">Smart Allocation & Room Access</h6>
         <Link
           href="/contact"
           className="mt-6 inline-block bg-[#252432] text-white px-14 py-4 rounded-md"
