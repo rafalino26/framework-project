@@ -85,6 +85,7 @@ export default function CommentPopup({ room, onClose }: CommentPopupProps) {
             />
             <span className="font-semibold">Your Name</span>
           </div>
+
           {/* ✅ 15. Textarea untuk mengetik komentar */}
           <textarea
             id="comment-box"
@@ -94,33 +95,50 @@ export default function CommentPopup({ room, onClose }: CommentPopupProps) {
             value={comment}
             onChange={(e) => setComment(e.target.value)}
           />
-          {/* ✅ 16. Tombol Editor Teks (Bold, Italic, Link) */}
-          <div className="flex gap-2 mt-2 text-gray-600">
+
+          {/* ✅ 16. Toolbar & Tombol Comment */}
+          <div className="flex justify-between items-center mt-2">
+            <div className="flex gap-2 text-gray-600">
+              {/* ✅ 17. Tombol Editor Teks (Bold, Italic, Link) */}
+              <button
+                className="hover:text-black"
+                onClick={() => applyFormat("bold")}
+              >
+                <FiBold />
+              </button>
+              <button
+                className="hover:text-black"
+                onClick={() => applyFormat("italic")}
+              >
+                <FiItalic />
+              </button>
+              <button
+                className="hover:text-black"
+                onClick={() => applyFormat("link")}
+              >
+                <FiLink />
+              </button>
+            </div>
+
+            {/* ✅ 18. Tombol untuk mengirim komentar */}
             <button
-              className="hover:text-black"
-              onClick={() => applyFormat("bold")}
+              className="py-1 px-3 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition"
+              onClick={() => {
+                if (comment.trim()) {
+                  alert(`Comment submitted: ${comment}`); // Simulasi submit komentar
+                  setComment(""); // Kosongkan textarea setelah komentar dikirim
+                }
+              }}
             >
-              <FiBold />
-            </button>
-            <button
-              className="hover:text-black"
-              onClick={() => applyFormat("italic")}
-            >
-              <FiItalic />
-            </button>
-            <button
-              className="hover:text-black"
-              onClick={() => applyFormat("link")}
-            >
-              <FiLink />
+              Comment
             </button>
           </div>
         </div>
 
-        {/* ✅ 17. Tampilan Komentar Orang Lain */}
+        {/* ✅ 19. Tampilan Komentar Orang Lain */}
         <div className="border p-4 rounded-lg mb-4">
           <div className="flex items-center mb-2">
-            {/* ✅ 18. Avatar dan nama pengguna yang berkomentar */}
+            {/* ✅ 20. Avatar dan nama pengguna yang berkomentar */}
             <img
               src={comments[currentCommentIndex].avatar}
               alt="Avatar"
@@ -130,11 +148,11 @@ export default function CommentPopup({ room, onClose }: CommentPopupProps) {
               {comments[currentCommentIndex].name}
             </span>
           </div>
-          {/* ✅ 19. Isi komentar */}
+          {/* ✅ 21. Isi komentar */}
           <p className="text-gray-700">{comments[currentCommentIndex].text}</p>
         </div>
 
-        {/* ✅ 20. Navigasi untuk berpindah komentar (ke atas dan ke bawah) */}
+        {/* ✅ 22. Navigasi untuk berpindah komentar (ke atas dan ke bawah) */}
         <div className="flex justify-center gap-2 mb-4">
           <button
             className="p-2 border rounded hover:bg-gray-100"
@@ -156,7 +174,7 @@ export default function CommentPopup({ room, onClose }: CommentPopupProps) {
           </button>
         </div>
 
-        {/* ✅ 21. Tombol untuk menutup popup */}
+        {/* ✅ 23. Tombol untuk menutup popup */}
         <button
           className="w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
           onClick={onClose}
