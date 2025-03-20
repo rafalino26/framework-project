@@ -6,6 +6,7 @@ import { MdInfoOutline } from "react-icons/md";
 import { BiMessageDetail } from "react-icons/bi";
 import CommentPopup from "../component/CommentPopup";
 import DetailsPopup from "../component/DetailsPopup";
+import BookRoomPopup from "../component/BookRoomPopup";
 
 type Room = {
   id: string;
@@ -56,7 +57,7 @@ export default function RoomContent() {
 
   const [popup, setPopup] = useState<{
     show: boolean;
-    type: "details" | "comment" | "";
+    type: "details" | "comment" | "book" | "";
     room: string;
     status?: string;
     course?: string;
@@ -101,7 +102,6 @@ export default function RoomContent() {
     });
   };
 
-  // ✅ Menampilkan hari, tanggal, dan waktu real-time
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
@@ -124,29 +124,40 @@ export default function RoomContent() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-blue-50 flex flex-col items-center p-10 font-poppins text-black">
+    <div className="min-h-screen bg-blue-50 flex flex-col items-center p-4 sm:p-10 font-poppins text-black">
       <div className="w-full max-w-7xl">
-        {/* ✅ Menampilkan Hari, Tanggal, dan Waktu */}
         <div className="text-center mb-4">
           <p className="text-lg font-medium text-gray-700">{dateTime}</p>
         </div>
 
-        {/* ✅ Header lantai */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-semibold">{`Floor ${floor} (${floor}nd Floor)`}</h1>
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-3">
+          <h1 className="text-xl sm:text-2xl font-semibold text-center sm:text-left">
+            {`Floor ${floor} (${
+              floor === 1
+                ? "1st"
+                : floor === 2
+                ? "2nd"
+                : floor === 3
+                ? "3rd"
+                : `${floor}th`
+            } Floor)`}
+          </h1>
           <button
             onClick={toggleFloor}
             className="p-2 bg-none cursor-pointer transition flex items-center gap-2"
           >
-            <span>Next</span>
+            <span>{floor === 2 ? "3rd Floor" : "2nd Floor"}</span>
             <FaChevronRight className="text-xl" />
           </button>
         </div>
 
-        {/* ✅ Daftar ruangan */}
-        <div className="grid grid-cols-3 gap-y-12 gap-x-6">
+        {/* 🔹 Grid Responsif */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-6">
           {floorData.map((room) => (
-            <div key={room.id} className="p-4 bg-white rounded-lg shadow-md">
+            <div
+              key={room.id}
+              className="p-4 bg-white rounded-lg shadow-md flex flex-col gap-3"
+            >
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-semibold">{room.id}</h2>
                 <span
@@ -157,51 +168,74 @@ export default function RoomContent() {
                   {room.status}
                 </span>
               </div>
-              <div className="mt-3 flex flex-col gap-2">
+
+              <div className="flex flex-col gap-2">
                 <button
-                  className="flex items-center gap-2 text-gray-700 hover:text-gray-900"
+                  className="flex items-center gap-1 px-3 py-1 w-fit rounded bg-blue-500 text-white text-sm hover:bg-blue-600 transition"
                   onClick={() => handlePopup("details", room)}
                 >
-                  <MdInfoOutline className="text-lg" />
+                  <MdInfoOutline className="text-base" />
                   <span className="font-medium">Details</span>
                 </button>
+
                 <button
-                  className="flex items-center gap-2 text-gray-700 hover:text-gray-900"
+                  className="flex items-center gap-1 px-3 py-1 w-fit rounded bg-blue-500 text-white text-sm hover:bg-blue-600 transition"
                   onClick={() => handlePopup("comment", room)}
                 >
-                  <BiMessageDetail className="text-lg" />
+                  <BiMessageDetail className="text-base" />
                   <span className="font-medium">Comment</span>
                 </button>
               </div>
+
+              {/* Tombol Book Room (Pastikan ini ada di sini!) */}
+              <button
+                className={`w-full px-4 py-2 rounded font-semibold transition text-center ${
+                  room.status === "Free"
+                    ? "bg-green-500 text-white hover:bg-green-600 cursor-pointer"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-50"
+                }`}
+                disabled={room.status !== "Free"}
+                onClick={() =>
+                  setPopup({ show: true, type: "book", room: room.id })
+                }
+              >
+                Book Room
+              </button>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ✅ Popup (Detail atau Comment) */}
-      {popup.show &&
-        (popup.type === "details" ? (
-          <DetailsPopup
-            show={popup.show}
-            room={popup.room}
-            status={popup.status as "Free" | "Used" | "Locked"}
-            course={popup.course ?? ""}
-            lecturer={popup.lecturer ?? ""}
-            time={popup.time ?? ""}
-            onClose={() =>
-              setPopup({
-                show: false,
-                type: "",
-                room: "",
-              })
-            }
-          />
-        ) : (
-          <CommentPopup
-            room={popup.room}
-            onClose={() => setPopup({ show: false, type: "", room: "" })}
-          />
-        ))}
+      {/* ✅ Popup hanya satu yang muncul */}
+      {popup.show && (
+        <>
+          {popup.type === "details" && (
+            <DetailsPopup
+              show={popup.show}
+              room={popup.room}
+              status={popup.status as "Free" | "Used" | "Locked"}
+              course={popup.course ?? ""}
+              lecturer={popup.lecturer ?? ""}
+              time={popup.time ?? ""}
+              onClose={() => setPopup({ show: false, type: "", room: "" })}
+            />
+          )}
+
+          {popup.type === "comment" && (
+            <CommentPopup
+              room={popup.room}
+              onClose={() => setPopup({ show: false, type: "", room: "" })}
+            />
+          )}
+
+          {popup.type === "book" && (
+            <BookRoomPopup
+              room={popup.room}
+              onClose={() => setPopup({ show: false, type: "", room: "" })}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 }
