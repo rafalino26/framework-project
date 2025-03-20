@@ -10,15 +10,13 @@ import {
 } from "react-icons/fi";
 
 interface CommentPopupProps {
-  room: string; // ✅ 1. Nama ruangan yang sedang dikomentari
-  onClose: () => void; // ✅ 2. Fungsi untuk menutup popup
+  room: string;
+  onClose: () => void;
 }
 
 export default function CommentPopup({ room, onClose }: CommentPopupProps) {
-  // ✅ 3. State untuk menyimpan komentar yang sedang diketik oleh pengguna
   const [comment, setComment] = useState("");
 
-  // ✅ 4. Data dummy untuk menampilkan komentar dari pengguna lain
   const comments = [
     {
       id: 1,
@@ -34,10 +32,8 @@ export default function CommentPopup({ room, onClose }: CommentPopupProps) {
     },
   ];
 
-  // ✅ 5. State untuk melacak komentar yang sedang ditampilkan
   const [currentCommentIndex, setCurrentCommentIndex] = useState(0);
 
-  // ✅ 6. Fungsi untuk menambahkan format teks (Bold, Italic, Link) ke dalam komentar
   const applyFormat = useCallback(
     (format: "bold" | "italic" | "link") => {
       const textarea = document.getElementById(
@@ -45,61 +41,53 @@ export default function CommentPopup({ room, onClose }: CommentPopupProps) {
       ) as HTMLTextAreaElement;
       if (!textarea) return;
 
-      // ✅ 7. Mengambil teks yang dipilih oleh pengguna
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
       const selectedText = comment.slice(start, end);
 
-      if (!selectedText) return; // Jika tidak ada teks yang dipilih, hentikan fungsi
+      if (!selectedText) return;
 
       let formattedText = selectedText;
       if (format === "bold") formattedText = `**${selectedText}**`;
       if (format === "italic") formattedText = `*${selectedText}*`;
       if (format === "link") {
-        const url = prompt("Enter URL:"); // ✅ 8. Meminta pengguna untuk memasukkan URL
+        const url = prompt("Enter URL:");
         if (url) formattedText = `[${selectedText}](${url})`;
       }
 
-      // ✅ 9. Mengganti teks yang dipilih dengan format yang dipilih
       setComment(comment.slice(0, start) + formattedText + comment.slice(end));
-      textarea.focus(); // ✅ 10. Mengembalikan fokus ke textarea setelah format diterapkan
+      textarea.focus();
     },
     [comment]
   );
 
   return (
-    // ✅ 11. Container utama popup dengan efek blur di latar belakang
-    <div className="fixed inset-0 bg-blend-saturation bg-opacity-20 backdrop-blur-sm flex justify-center items-center">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-1/3">
-        {/* ✅ 12. Judul Popup */}
-        <h2 className="text-xl font-semibold mb-4">Comments</h2>
+    <div className="fixed inset-0 bg-blend-saturation bg-opacity-20 backdrop-blur-sm flex justify-center items-center px-4">
+      <div className="bg-white p-4 md:p-6 rounded-lg shadow-lg w-full max-w-[90%] md:w-1/3">
+        <h2 className="text-lg md:text-xl font-semibold mb-4">Comments</h2>
 
-        {/* ✅ 13. Input Komentar - Untuk pengguna mengetik komentar baru */}
-        <div className="border p-4 rounded-lg mb-4">
+        {/* Input Komentar */}
+        <div className="border p-3 md:p-4 rounded-lg mb-4">
           <div className="flex items-center mb-2">
-            {/* ✅ 14. Avatar pengguna */}
             <img
-              src="/avatar1.png"
+              src="/profilepict1.png"
               alt="User Avatar"
-              className="w-8 h-8 rounded-full mr-2"
+              className="w-6 h-6 md:w-8 md:h-8 rounded-full mr-2"
             />
-            <span className="font-semibold">Your Name</span>
+            <span className="font-semibold text-sm md:text-base">Nezuko</span>
           </div>
 
-          {/* ✅ 15. Textarea untuk mengetik komentar */}
           <textarea
             id="comment-box"
-            className="w-full border rounded p-2 text-gray-700"
+            className="w-full border rounded p-2 text-gray-700 text-sm md:text-base"
             rows={3}
             placeholder="Write a comment..."
             value={comment}
             onChange={(e) => setComment(e.target.value)}
           />
 
-          {/* ✅ 16. Toolbar & Tombol Comment */}
           <div className="flex justify-between items-center mt-2">
-            <div className="flex gap-2 text-gray-600">
-              {/* ✅ 17. Tombol Editor Teks (Bold, Italic, Link) */}
+            <div className="flex gap-1 md:gap-2 text-gray-600">
               <button
                 className="hover:text-black"
                 onClick={() => applyFormat("bold")}
@@ -120,13 +108,12 @@ export default function CommentPopup({ room, onClose }: CommentPopupProps) {
               </button>
             </div>
 
-            {/* ✅ 18. Tombol untuk mengirim komentar */}
             <button
-              className="py-1 px-3 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition"
+              className="py-1 px-3 bg-blue-500 text-white rounded text-xs md:text-sm hover:bg-blue-600 transition"
               onClick={() => {
                 if (comment.trim()) {
-                  alert(`Comment submitted: ${comment}`); // Simulasi submit komentar
-                  setComment(""); // Kosongkan textarea setelah komentar dikirim
+                  alert(`Comment submitted: ${comment}`);
+                  setComment("");
                 }
               }}
             >
@@ -135,27 +122,27 @@ export default function CommentPopup({ room, onClose }: CommentPopupProps) {
           </div>
         </div>
 
-        {/* ✅ 19. Tampilan Komentar Orang Lain */}
-        <div className="border p-4 rounded-lg mb-4">
+        {/* Komentar Orang Lain */}
+        <div className="border p-3 md:p-4 rounded-lg mb-4">
           <div className="flex items-center mb-2">
-            {/* ✅ 20. Avatar dan nama pengguna yang berkomentar */}
             <img
               src={comments[currentCommentIndex].avatar}
               alt="Avatar"
-              className="w-8 h-8 rounded-full mr-2"
+              className="w-6 h-6 md:w-8 md:h-8 rounded-full mr-2"
             />
-            <span className="font-semibold">
+            <span className="font-semibold text-sm md:text-base">
               {comments[currentCommentIndex].name}
             </span>
           </div>
-          {/* ✅ 21. Isi komentar */}
-          <p className="text-gray-700">{comments[currentCommentIndex].text}</p>
+          <p className="text-gray-700 text-sm md:text-base">
+            {comments[currentCommentIndex].text}
+          </p>
         </div>
 
-        {/* ✅ 22. Navigasi untuk berpindah komentar (ke atas dan ke bawah) */}
+        {/* Navigasi Komentar */}
         <div className="flex justify-center gap-2 mb-4">
           <button
-            className="p-2 border rounded hover:bg-gray-100"
+            className="p-1 md:p-2 border rounded hover:bg-gray-100"
             onClick={() =>
               setCurrentCommentIndex((prev) => Math.max(prev - 1, 0))
             }
@@ -163,7 +150,7 @@ export default function CommentPopup({ room, onClose }: CommentPopupProps) {
             <FiArrowUp />
           </button>
           <button
-            className="p-2 border rounded hover:bg-gray-100"
+            className="p-1 md:p-2 border rounded hover:bg-gray-100"
             onClick={() =>
               setCurrentCommentIndex((prev) =>
                 Math.min(prev + 1, comments.length - 1)
@@ -174,9 +161,9 @@ export default function CommentPopup({ room, onClose }: CommentPopupProps) {
           </button>
         </div>
 
-        {/* ✅ 23. Tombol untuk menutup popup */}
+        {/* Tombol Close */}
         <button
-          className="w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+          className="w-full py-2 bg-blue-500 text-white rounded text-sm md:text-base hover:bg-blue-600 transition"
           onClick={onClose}
         >
           Close

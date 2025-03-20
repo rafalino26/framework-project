@@ -53,42 +53,50 @@ const DetailsPopup: React.FC<DetailsPopupProps> = ({
 
   return (
     // ✅ 5. Background overlay untuk popup
-    <div className="fixed inset-0 bg-blend-saturation bg-opacity-20 backdrop-blur-sm flex justify-center items-center">
+    <div className="fixed inset-0 bg-blend-saturation bg-opacity-20 backdrop-blur-sm flex justify-center items-center p-4">
       {/* ✅ 6. Container utama popup */}
-      <div className="bg-white p-6 rounded-lg shadow-lg w-[400px]">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-[90%] sm:w-[350px] md:w-[400px]">
         {/* ✅ 7. Judul Popup (Nama Ruangan) */}
-        <h2 className="text-2xl font-bold">{room}</h2>
+        <h2 className="text-2xl font-bold text-center md:text-left">{room}</h2>
 
         {/* ✅ 8. Badge status ruangan */}
-        <span
-          className={`inline-block px-3 py-1 text-sm font-semibold rounded-full mt-2 ${getStatusClass(
-            status
-          )}`}
-        >
-          {status}
-        </span>
+        <div className="flex justify-center md:justify-start mt-2">
+          <span
+            className={`inline-block px-3 py-1 text-sm font-semibold rounded-full ${getStatusClass(
+              status
+            )}`}
+          >
+            {status}
+          </span>
+        </div>
 
         {/* ✅ 9. Informasi Mata Kuliah */}
-        <div className="mt-4 flex items-center gap-2">
+        <div className="mt-4 flex flex-col md:flex-row items-center gap-2">
           <BiBook className="text-xl text-gray-600" />
-          <h3 className="text-xl font-semibold">{displayCourse}</h3>
+          <h3 className="text-lg font-semibold text-center md:text-left">
+            {displayCourse}
+          </h3>
         </div>
 
         {/* ✅ 10. Informasi Dosen Pengampu */}
-        <div className="mt-2 flex items-center gap-2">
+        <div className="mt-2 flex flex-col md:flex-row items-center gap-2">
           <MdOutlinePerson className="text-lg text-gray-600" />
-          <p className="text-gray-700 font-medium">{displayLecturer}</p>
+          <p className="text-gray-700 font-medium text-center md:text-left">
+            {displayLecturer}
+          </p>
         </div>
 
         {/* ✅ 11. Informasi Waktu Penggunaan Ruangan */}
-        <div className="mt-2 flex items-center gap-2">
+        <div className="mt-2 flex flex-col md:flex-row items-center gap-2">
           <FaRegClock className="text-lg text-gray-600" />
-          <p className="text-gray-700">{displayTime}</p>
+          <p className="text-gray-700 text-center md:text-left">
+            {displayTime}
+          </p>
         </div>
 
         {/* ✅ 12. Tombol untuk menutup popup */}
         <button
-          className="mt-6 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          className="mt-6 w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
           onClick={onClose}
         >
           Close
