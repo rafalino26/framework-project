@@ -68,7 +68,7 @@ export default function ScheduleContent() {
       ) : (
         <div>
           {/* Header (Back, Search, Filter) */}
-          <div className="flex flex-col md:flex-row md:justify-between items-center mb-6 bg-white p-3 rounded-lg shadow-md gap-3">
+          <div className="flex flex-col md:flex-row md:justify-between items-center mb-6 -mt-6 bg-white p-3 rounded-lg shadow-md gap-3">
             <button
               onClick={() => setSelectedSemester(null)}
               className="flex items-center gap-2 px-4 py-2"

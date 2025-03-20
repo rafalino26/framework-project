@@ -1,3 +1,12 @@
+Anggota kelompok(Kelas B):
+Made Narayindra - 220211060016
+Rafael Lalujan - 220211060024
+Galnoel Rindengan - 220211060076
+
+
+
+
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
