@@ -115,9 +115,12 @@ export default function DashboardLayout({
                   >
                     Edit Profile
                   </Link>
-                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500 font-poppins">
-                    Logout
-                  </button>
+                  <Link
+                href="/"
+                className="block px-4 py-2 hover:bg-gray-100 text-red-500 font-poppins"
+              >
+                Logout
+              </Link>
                 </div>
               )}
             </div>
