@@ -8,7 +8,7 @@ export default function SettingsContent() {
 
   return (
     <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-4">Settings</h2>
+      <h2 className="text-2xl font-bold text-black mb-8">Settings</h2>
 
       {/* Notifications Toggle */}
       <div className="flex items-center justify-between border-b pb-4 mb-4">

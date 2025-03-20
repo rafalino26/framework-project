@@ -3,9 +3,9 @@
 import { useState } from "react";
 
 export default function EditProfileContent() {
-  const [name, setName] = useState("Galnoel Kun");
-  const [email, setEmail] = useState("kevinlovesara@example.com");
-  const [bio, setBio] = useState("I love Sara.");
+  const [name, setName] = useState("Kevin Rindengan");
+  const [email, setEmail] = useState("kevin@example.com");
+  const [bio, setBio] = useState("SARA is the best.");
   const [avatar, setAvatar] = useState("/profilepict1.png");
 
   const handleSubmit = (e: React.FormEvent) => {
