@@ -1,133 +1,205 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { BsArrowRightCircle, BsArrowLeftCircle } from "react-icons/bs";
+import { useState } from "react"
+import { FiChevronDown } from "react-icons/fi"
+import { FaBook, FaUser, FaClock, FaMapMarkerAlt, FaCalendarAlt } from "react-icons/fa";
 
-export default function ScheduleContent() {
-  const [selectedSemester, setSelectedSemester] = useState<string | null>(null);
-  const [selectedFilter, setSelectedFilter] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
+const courses = [
+  { id: "MK001", name: "Algoritma dan Pemrograman", lecturer: "Dr. Budi Santoso", time: "Senin, 08:00 - 10:30", room: "R-101", semester: "1", day: "Senin" },
+  { id: "MK002", name: "Basis Data", lecturer: "Prof. Siti Rahayu", time: "Selasa, 13:00 - 15:30", room: "R-102", semester: "3", day: "Selasa" },
+  { id: "MK003", name: "Jaringan Komputer", lecturer: "Dr. Ahmad Wijaya", time: "Rabu, 10:00 - 12:30", room: "R-103", semester: "5", day: "Rabu" },
+  { id: "MK004", name: "Kecerdasan Buatan", lecturer: "Dr. Maya Putri", time: "Kamis, 08:00 - 10:30", room: "R-104", semester: "7", day: "Kamis" },
+  { id: "MK005", name: "Sistem Operasi", lecturer: "Prof. Darmawan", time: "Jumat, 13:00 - 15:30", room: "R-105", semester: "3", day: "Jumat" },
+]
 
-  const courses = [
-    { name: "Mathematics", lecturer: "Dr. Smith", time: "08:00 - 10:00", class: "JTE-04", semester: 1 },
-    { name: "Physics", lecturer: "Prof. Johnson", time: "10:00 - 12:00", class: "JTE-05", semester: 3 },
-    { name: "Programming", lecturer: "Ms. Doe", time: "13:00 - 15:00", class: "JTE-06", semester: 5 },
-    { name: "Chemistry", lecturer: "Mr. Brown", time: "15:00 - 17:00", class: "JTE-07", semester: 7 },
-    { name: "Biology", lecturer: "Dr. Green", time: "08:00 - 10:00", class: "JTE-08", semester: 2 },
-    { name: "Web Development", lecturer: "Ms. White", time: "10:00 - 12:00", class: "JTE-09", semester: 4 },
-    { name: "Machine Learning", lecturer: "Mr. Black", time: "13:00 - 15:00", class: "JTE-10", semester: 6 },
-    { name: "Networking", lecturer: "Dr. Yellow", time: "15:00 - 17:00", class: "JTE-11", semester: 8 },
-    { name: "Mathematics II", lecturer: "Dr. Smith", time: "08:00 - 10:00", class: "JTE-12", semester: 1 },
-    { name: "Physics II", lecturer: "Prof. Johnson", time: "10:00 - 12:00", class: "JTE-04", semester: 3 },
-    { name: "Advanced Programming", lecturer: "Ms. Doe", time: "13:00 - 15:00", class: "JTE-05", semester: 5 },
-    { name: "Organic Chemistry", lecturer: "Mr. Brown", time: "15:00 - 17:00", class: "JTE-06", semester: 7 },
-    { name: "Genetics", lecturer: "Dr. Green", time: "08:00 - 10:00", class: "JTE-07", semester: 2 },
-    { name: "Frontend Development", lecturer: "Ms. White", time: "10:00 - 12:00", class: "JTE-08", semester: 4 },
-    { name: "Deep Learning", lecturer: "Mr. Black", time: "13:00 - 15:00", class: "JTE-09", semester: 6 },
-    { name: "Cybersecurity", lecturer: "Dr. Yellow", time: "15:00 - 17:00", class: "JTE-10", semester: 8 }
-    
-  ];
+export default function SchedulePage() {
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([])
+  const [semester, setSemester] = useState("all")
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState("courses"); 
 
-  const availableSemesters = selectedSemester === "even" ? [2, 4, 6, 8] : [1, 3, 5, 7];
+  const semesters = [
+    { value: "all", label: "Semua Semester" },
+    { value: "1", label: "Semester 1" },
+    { value: "3", label: "Semester 3" },
+    { value: "5", label: "Semester 5" },
+    { value: "7", label: "Semester 7" },
+  ]
 
-  const filteredCourses = courses.filter(
-    (course) =>
-      availableSemesters.includes(course.semester) &&
-      (selectedFilter === "" || course.semester === parseInt(selectedFilter)) &&
-      course.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
+
+  const filteredCourses = semester === "all" ? courses : courses.filter((course) => course.semester === semester);
+  const selectedCourseDetails = courses.filter((course) => selectedCourses.includes(course.id));
+
+  const handleCourseToggle = (courseId: string) => {
+    setSelectedCourses((prev) => (prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId]))
+  }
 
   return (
-    <div className="p-4 md:p-6 min-h-screen text-black">
-      {!selectedSemester ? (
-        <div>
-          <h2 className="text-2xl font-bold mb-8 -mt-10 text-center">Please select your semester</h2>
-
-    {/* Pilihan Semester (Grid Responsive) */}
-    <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-  {["odd", "even"].map((type, idx) => (
-    <div
-      key={idx}
-      onClick={() => setSelectedSemester(type)}
-      className="relative bg-white w-full max-w-[280px] h-56 rounded-lg shadow-lg hover:shadow-xl transition cursor-pointer flex flex-col justify-between p-4 sm:w-60"
-    >
-      <div className="w-full h-32 bg-gray-200 rounded-lg flex items-center justify-center">
-        <h3 className="text-lg font-semibold text-gray-800">
-          {type === "odd" ? "Odd Semester" : "Even Semester"}
-        </h3>
-      </div>
-      <p className="text-gray-600 text-sm text-center mt-auto">
-        {type === "odd" ? "1st, 3rd, 5th, and 7th semester courses" : "2nd, 4th, 6th, and 8th semester courses"}
+    <div className="text-black space-y-6">
+      <p className="text-gray-600 text-center sm:text-left">
+        Pilih mata kuliah yang Anda kontrak untuk melihat jadwal.
       </p>
-    </div>
-  ))}
-</div>
-
-
-        </div>
-      ) : (
-        <div>
-          {/* Header (Back, Search, Filter) */}
-          <div className="flex flex-col md:flex-row md:justify-between items-center mb-6 -mt-6 bg-white p-3 rounded-lg shadow-md gap-3">
-            <button
-              onClick={() => setSelectedSemester(null)}
-              className="flex items-center gap-2 px-4 py-2"
-            >
-              <BsArrowLeftCircle size={28} className="text-gray-600 hover:text-gray-800 transition" />
-              <span className="text-gray-700">Back</span>
-            </button>
-
-            <input
-              type="text"
-              placeholder="Search course..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-white border border-gray-300 rounded-lg px-4 py-2 w-full md:w-1/3 focus:outline-none shadow-sm"
-            />
-
-            <select
-              className="bg-white border border-gray-300 rounded-lg px-4 py-2 shadow-sm w-full md:w-auto"
-              value={selectedFilter}
-              onChange={(e) => setSelectedFilter(e.target.value)}
-            >
-              <option value="">All Semesters</option>
-              {availableSemesters.map((sem) => (
-                <option key={sem} value={sem}>
-                  Semester {sem}
-                </option>
+  
+      {/* Filter dan Badge + Reset dalam satu row */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        {/* Custom Dropdown Filter Semester */}
+        <div className="relative w-full sm:w-48">
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="w-full flex justify-between text-sm items-center border border-gray-300 px-4 py-2 rounded-md bg-transparent"
+          >
+            {semesters.find((s) => s.value === semester)?.label}
+            <FiChevronDown className={`transition-transform ${dropdownOpen ? "rotate-180" : "rotate-0"}`} />
+          </button>
+  
+          {dropdownOpen && (
+            <div className="absolute w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+              {semesters.map((s) => (
+                <div
+                  key={s.value}
+                  onClick={() => {
+                    setSemester(s.value);
+                    setDropdownOpen(false);
+                  }}
+                  className="px-4 py-2 text-sm text-black hover:bg-gray-100 cursor-pointer"
+                >
+                  {s.label}
+                </div>
               ))}
-            </select>
-          </div>
-
-          {/* Tabel Mata Kuliah (Bisa Scroll di Mobile) */}
-          <div className="bg-white p-4 rounded-lg shadow-md overflow-x-auto">
-            {filteredCourses.length > 0 ? (
-              <table className="w-full min-w-[600px] border-collapse text-black">
-                <thead>
-                  <tr className="border-b text-left">
-                    <th className="p-2">Course</th>
-                    <th className="p-2">Lecturer</th>
-                    <th className="p-2">Time</th>
-                    <th className="p-2">Class</th>
+            </div>
+          )}
+        </div>
+  
+        {/* Badge & Reset Button */}
+        <div className="flex items-center gap-4">
+          <span className="px-3 py-1 text-xs border border-black font-semibold text-black rounded-full bg-transparent">
+            {selectedCourses.length} Mata Kuliah Dipilih
+          </span>
+          <button
+            className="px-3 py-2 border text-sm border-black text-black rounded-md bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => setSelectedCourses([])}
+            disabled={selectedCourses.length === 0}
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+  
+      {/* Tabs */}
+      <div className="flex bg-gray-100 p-1 rounded-lg w-fit mx-auto sm:mx-0">
+        <button
+          className={`px-4 py-2 text-sm rounded-md ${
+            activeTab === "courses" ? "bg-white font-semibold" : "text-gray-500"
+          }`}
+          onClick={() => setActiveTab("courses")}
+        >
+          Pilihan Mata Kuliah
+        </button>
+        <button
+          className={`px-4 py-2 text-sm rounded-md ${
+            activeTab === "schedule" ? "bg-white font-semibold" : "text-gray-500"
+          }`}
+          onClick={() => selectedCourses.length > 0 && setActiveTab("schedule")}
+          disabled={selectedCourses.length === 0}
+        >
+          Jadwal
+        </button>
+      </div>
+  
+      {/* Card Container */}
+      <div className="border border-gray-300 rounded-lg p-6 bg-white">
+        {activeTab === "courses" ? (
+          <>
+            <h3 className="text-2xl font-semibold mb-4 text-center sm:text-left">Pilih Mata Kuliah</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead className="border-b border-gray-300 pb-3">
+                  <tr className="text-left text-gray-600">
+                    <th className="p-2 font-medium">Pilih</th>
+                    <th className="p-2 font-medium">Mata Kuliah</th>
+                    <th className="p-2 font-medium">Dosen</th>
+                    <th className="p-2 font-medium">Waktu</th>
+                    <th className="p-2 font-medium">Ruangan</th>
+                    <th className="p-2 font-medium">Semester</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredCourses.map((course, index) => (
-                    <tr key={index} className="border-b">
+                  {filteredCourses.map((course) => (
+                    <tr key={course.id} className="border-b border-gray-300">
+                      <td className="p-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedCourses.includes(course.id)}
+                          onChange={() => handleCourseToggle(course.id)}
+                          className="w-5 h-5"
+                        />
+                      </td>
                       <td className="p-2">{course.name}</td>
                       <td className="p-2">{course.lecturer}</td>
                       <td className="p-2">{course.time}</td>
-                      <td className="p-2">{course.class}</td>
+                      <td className="p-2">{course.room}</td>
+                      <td className="p-2">{course.semester}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            ) : (
-              <p className="text-center text-gray-500">No courses found.</p>
-            )}
-          </div>
-        </div>
-      )}
+            </div>
+          </>
+        ) : (
+          <>
+            <h3 className="text-2xl font-semibold text-center sm:text-left">Jadwal Mata Kuliah</h3>
+            <p className="text-gray-500 text-center sm:text-left">Jadwal mata kuliah yang Anda pilih.</p>
+  
+            <div className="space-y-6 mt-4">
+              {days.map((day) => {
+                const dayCourses = selectedCourseDetails.filter((course) => course.day === day);
+                return (
+                  <div key={day}>
+                    <h4 className="text-lg font-semibold">{day}</h4>
+                    {dayCourses.length > 0 ? (
+                      dayCourses.map((course) => (
+                        <div key={course.id} className="p-4 border border-gray-300 rounded-lg flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-2">
+                          {/* Kiri: Nama dan Dosen */}
+                          <div className="flex-1">
+                            <p className="font-semibold text-black flex items-center gap-2">
+                              <FaBook /> {course.name}
+                            </p>
+                            <p className="text-gray-600 flex items-center gap-2">
+                              <FaUser /> {course.lecturer}
+                            </p>
+                          </div>
+                          {/* Tengah: Waktu dan Ruangan (dalam 1 kolom) */}
+                          <div className="flex-1 flex flex-col items-start ">
+                            {/* Waktu */}
+                            <p className="text-gray-700 flex items-center gap-2">
+                              <FaClock /> {course.time}
+                            </p>
+
+                            {/* Ruangan (tepat di bawah waktu) */}
+                            <p className="text-gray-700 flex items-center gap-2">
+                              <FaMapMarkerAlt /> {course.room}
+                            </p>
+                          </div>
+
+                          {/* Kanan: Semester */}
+                          <div className="text-right sm:text-left">
+                            <p className="text-gray-700 flex items-center justify-end sm:justify-start gap-2">
+                              <FaCalendarAlt className="text-gray-500" /> Semester {course.semester}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-400 italic">Tidak ada jadwal untuk hari {day}.</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
-}
+}  

@@ -22,7 +22,7 @@ export default function EditProfileContent() {
           alt="Avatar"
           className="w-20 h-20 rounded-full border border-gray-300 object-cover"
         />
-        <button className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+        <button className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800">
           Change Avatar
         </button>
       </div>
@@ -63,7 +63,7 @@ export default function EditProfileContent() {
         {/* Submit Button */}
         <button
           type="submit"
-          className="bg-blue-500 text-white px-5 py-3 rounded-md hover:bg-blue-600 w-full"
+          className="bg-black text-white px-5 py-3 rounded-md hover:bg-gray-800 w-full"
         >
           Save Changes
         </button>
