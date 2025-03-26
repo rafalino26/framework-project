@@ -24,12 +24,12 @@ export default function AboutUs() {
 
   return (
     <section className="w-full py-12 md:py-24 bg-background" id="about">
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto px-4 md:px-6">
         {/* Header */}
         <div className="flex flex-col items-center justify-center text-center mb-10">
           <h2 className="text-3xl text-black font-bold md:text-4xl">Tentang Kami</h2>
           <br />
-          <p className="max-w-[700px] text-gray-600 md:text-lg">s
+          <p className="max-w-[700px] text-gray-600 md:text-lg">
             Sistem ini dikembangkan oleh Tim Pengembangan IT untuk meningkatkan efisiensi penggunaan ruangan di Universitas Sam Ratulangi.
           </p>
         </div>
@@ -39,18 +39,19 @@ export default function AboutUs() {
           <div className="text-black space-y-4">
             <h3 className="text-2xl font-bold">Tujuan Sistem</h3>
             <ul className="space-y-3">
-              {[
-                "Meminimalisir konflik jadwal ruangan.",
-                "Memberikan transparansi ketersediaan fasilitas kampus.",
-                "Meningkatkan efisiensi penggunaan ruangan kelas.",
-                "Memudahkan mahasiswa dan dosen dalam mencari informasi ruangan.",
-              ].map((item, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
+  {[
+    "Meminimalisir konflik jadwal ruangan.",
+    "Memberikan transparansi ketersediaan fasilitas kampus.",
+    "Meningkatkan efisiensi penggunaan ruangan kelas.",
+    "Memudahkan mahasiswa dan dosen dalam mencari informasi ruangan.",
+  ].map((item, index) => (
+    <li key={index} className="flex items-center gap-2">
+      <CheckCircle size={20} className="text-primary flex-shrink-0 h-auto w-auto" />
+      <span className="text-sm md:text-base">{item}</span>
+    </li>
+  ))}
+</ul>
+
           </div>
 
           {/* Gambar (Logo Universitas) */}
