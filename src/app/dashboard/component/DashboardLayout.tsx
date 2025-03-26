@@ -2,6 +2,7 @@
 
 import Navbar from "./Navbar";
 import { usePathname } from "next/navigation";
+import Footer from "@/app/components/Footer";
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -30,6 +31,10 @@ export default function DashboardLayout({
 
       {/* Main Content */}
       <main className="flex-1 -mt-6 p-4 md:p-6">{children}</main>
+
+            {/* Footer */}
+            <Footer /> 
+            
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { CheckCircle } from "lucide-react";
 import Link from "next/link";
+import Footer from "./Footer";
 
 export default function AboutUs() {
   // Data Tim Pengembang
@@ -69,7 +70,7 @@ export default function AboutUs() {
         </div>
 
         {/* Tim Pengembang */}
-        <div className="space-y-6">
+        <div className="space-y-6 mb-20">
           <h3 className="text-2xl text-black font-bold text-center">Tim Pengembang</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {developers.map((developer, index) => (
@@ -92,38 +93,8 @@ export default function AboutUs() {
           </div>
         </div>
         
-   {/* Footer Section */}
-   <div className="mt-12 bg-white py-8 px-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-          {/* Sistem Manajemen Ruangan */}
-          <div>
-            <h3 className="text-xl font-semibold text-black mb-2">Sistem Manajemen Ruangan</h3>
-            <p className="text-gray-600">Solusi terpadu untuk manajemen ruangan kelas dan jadwal perkuliahan.</p>
-          </div>
-
-          {/* Tautan Cepat */}
-          <div>
-            <h3 className="text-xl font-semibold text-black mb-2">Tautan Cepat</h3>
-            <ul className="space-y-2">
-              <li><Link href="/" className="text-gray-600 hover:text-black">Beranda</Link></li>
-              <li><Link href="/rooms" className="text-gray-600 hover:text-black">Ruangan</Link></li>
-              <li><Link href="/schedule" className="text-gray-600 hover:text-black">Jadwal</Link></li>
-              <li><Link href="/about" className="text-gray-600 hover:text-black">Tentang Kami</Link></li>
-            </ul>
-          </div>
-
-          {/* Hubungi Kami */}
-          <div>
-            <h3 className="text-xl font-semibold text-black mb-2">Hubungi Kami</h3>
-            <p className="text-gray-600">support@namasistem.ac.id</p>
-            <p className="text-gray-600">+62 812-XXXX-XXXX</p>
-            <p className="text-gray-600">Jl. Pendidikan No. 123, Kota Universitas, Indonesia</p>
-          </div>
-        </div>
-        <br />
-        {/* Copyright */}
-        <p className="text-gray-500 text-sm text-center mt-6">© 2025 Sistem Manajemen Ruangan Kelas. Hak Cipta Dilindungi.</p>
-      </div>
+            {/* Footer */}
+            <Footer /> 
       </div>
     </section>
   );
