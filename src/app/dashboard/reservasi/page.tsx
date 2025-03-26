@@ -1,10 +1,10 @@
 import DashboardLayout from "@/app/dashboard/component/DashboardLayout";
-import RoomContent from "@/app/dashboard/room/RoomContent";
+import ReservasiContent from "./ReservasiContent";
 
-export default function RoomPage() {
+export default function ReservasiPage() {
   return (
     <DashboardLayout>
-      <RoomContent />
+      <ReservasiContent />
     </DashboardLayout>
   );
 }
