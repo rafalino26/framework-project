@@ -39,7 +39,7 @@ export default function Home() {
               </Link>
               
               <Link
-                href="/about"
+                href="#preview"
                 className="inline-block border border-gray-300 text-black px-6 py-3 font-semibold rounded-md hover:bg-gray-100 transition"
               >
                 Pelajari Lebih Lanjut
@@ -55,7 +55,7 @@ export default function Home() {
       </section>
 
       {/* Classroom Preview Section */}
-      <section className="w-full py-12 md:py-16 bg-background">
+      <section id="preview" className="w-full py-12 md:py-16 bg-background">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center mb-10">
             <h2 className="text-3xl text-black font-bold tracking-tighter md:text-4xl">Preview Ruangan Kelas</h2>

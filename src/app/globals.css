@@ -1,13 +1,10 @@
 @import "tailwindcss";
-
-@theme {
-  --font-sans: var(--font-poppins), var(--font-geist-sans), sans-serif; /* ✅ Tambahkan Poppins */
-  --font-mono: var(--font-geist-mono);
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --font-sans: "Inter", sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -20,7 +17,9 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: var(
-    --font-sans
-  ); /* ✅ Gunakan font-sans yang sudah diperbarui */
+  font-family: var(--font-sans) !important;
+}
+
+html {
+  scroll-behavior: smooth;
 }
