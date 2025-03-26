@@ -108,7 +108,6 @@ export default function AboutUs() {
               <li><Link href="/rooms" className="text-gray-600 hover:text-black">Ruangan</Link></li>
               <li><Link href="/schedule" className="text-gray-600 hover:text-black">Jadwal</Link></li>
               <li><Link href="/about" className="text-gray-600 hover:text-black">Tentang Kami</Link></li>
-              <li><Link href="/contact" className="text-gray-600 hover:text-black">Hubungi Kami</Link></li>
             </ul>
           </div>
 
