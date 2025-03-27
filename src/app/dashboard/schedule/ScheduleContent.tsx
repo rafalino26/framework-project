@@ -5,11 +5,11 @@ import { FiChevronDown } from "react-icons/fi"
 import { FaBook, FaUser, FaClock, FaMapMarkerAlt, FaCalendarAlt } from "react-icons/fa";
 
 const courses = [
-  { id: "MK001", name: "Algoritma dan Pemrograman", lecturer: "Dr. Budi Santoso", time: "Senin, 08:00 - 10:30", room: "R-101", semester: "1", day: "Senin" },
-  { id: "MK002", name: "Basis Data", lecturer: "Prof. Siti Rahayu", time: "Selasa, 13:00 - 15:30", room: "R-102", semester: "3", day: "Selasa" },
-  { id: "MK003", name: "Jaringan Komputer", lecturer: "Dr. Ahmad Wijaya", time: "Rabu, 10:00 - 12:30", room: "R-103", semester: "5", day: "Rabu" },
-  { id: "MK004", name: "Kecerdasan Buatan", lecturer: "Dr. Maya Putri", time: "Kamis, 08:00 - 10:30", room: "R-104", semester: "7", day: "Kamis" },
-  { id: "MK005", name: "Sistem Operasi", lecturer: "Prof. Darmawan", time: "Jumat, 13:00 - 15:30", room: "R-105", semester: "3", day: "Jumat" },
+  { id: "MK001", name: "Algoritma dan Pemrograman", lecturer: "Dr. Budi Santoso", time: "Senin, 08:00 - 10:30", room: "JTE-01", semester: "1", day: "Senin" },
+  { id: "MK002", name: "Basis Data", lecturer: "Prof. Siti Rahayu", time: "Selasa, 13:00 - 15:30", room: "JTE-02", semester: "3", day: "Selasa" },
+  { id: "MK003", name: "Jaringan Komputer", lecturer: "Dr. Ahmad Wijaya", time: "Rabu, 10:00 - 12:30", room: "JTE-03", semester: "5", day: "Rabu" },
+  { id: "MK004", name: "Kecerdasan Buatan", lecturer: "Dr. Maya Putri", time: "Kamis, 08:00 - 10:30", room: "JTE-04", semester: "7", day: "Kamis" },
+  { id: "MK005", name: "Sistem Operasi", lecturer: "Prof. Darmawan", time: "Jumat, 13:00 - 15:30", room: "JTE-05", semester: "3", day: "Jumat" },
 ]
 
 export default function SchedulePage() {

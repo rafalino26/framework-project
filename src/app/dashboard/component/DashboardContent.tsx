@@ -10,11 +10,11 @@ export default function DashboardContent() {
 
   // Data untuk bar chart
   const roomUsageData = [
-    { name: "R101", usage: 85 },
-    { name: "R102", usage: 65 },
-    { name: "R103", usage: 45 },
-    { name: "R104", usage: 30 },
-    { name: "R105", usage: 25 },
+    { name: "JTE-01", usage: 85 },
+    { name: "JTE-02", usage: 65 },
+    { name: "JTE-03", usage: 45 },
+    { name: "JTE-04", usage: 30 },
+    { name: "JTE-05", usage: 25 },
   ];
 
   // Data untuk pie chart
@@ -52,7 +52,7 @@ export default function DashboardContent() {
     {
       id: 1,
       name: "Budi Santoso",
-      room: "R-101",
+      room: "JTE-01",
       time: "2 jam lalu",
       text: "Ruangan sangat nyaman dan bersih. AC berfungsi dengan baik.",
       likes: 12,
@@ -62,7 +62,7 @@ export default function DashboardContent() {
     {
       id: 2,
       name: "Siti Rahayu",
-      room: "R-103",
+      room: "JTE-02",
       time: "5 jam lalu",
       text: "Proyektor tidak berfungsi dengan baik, perlu perbaikan.",
       likes: 8,
@@ -72,7 +72,7 @@ export default function DashboardContent() {
     {
       id: 3,
       name: "Ahmad Wijaya",
-      room: "R-102",
+      room: "JTE-03",
       time: "1 hari lalu",
       text: "Kursi kurang nyaman untuk perkuliahan jangka panjang.",
       likes: 5,
