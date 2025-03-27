@@ -1,9 +1,38 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 
 export default function LoginPage() {
+  const router = useRouter();
+
+  // State untuk menyimpan email dan password
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  // Akun Dummy
+  const users = [
+    { email: "admin@tes.com", password: "admin123", role: "admin" },
+    { email: "user@tes.com", password: "user123", role: "user" },
+  ];
+
+  // Function untuk menangani login
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault(); // Mencegah reload halaman
+
+    // Cek apakah email & password cocok dengan akun dummy
+    const user = users.find((u) => u.email === email && u.password === password);
+
+    if (user) {
+      // Redirect ke dashboard masing-masing
+      router.push(user.role === "admin" ? "/admindashboard" : "/dashboard");
+    } else {
+      alert("Email atau password salah!");
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-[#EDF0F2] items-center justify-center p-4 font-sans">
       <div className="bg-white w-11/12 md:w-5/6 lg:w-3/4 h-auto md:h-4/5 flex flex-col md:flex-row rounded-xl shadow-lg overflow-hidden">
@@ -16,11 +45,14 @@ export default function LoginPage() {
 
           <p className="text-black text-sm mb-6">See your growth and get support!</p>
 
-          <form action="/dashboard">
+          {/* Form Login */}
+          <form onSubmit={handleLogin}>
             <label className="text-sm font-medium text-black">Email*</label>
             <input
               type="email"
               placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
 
@@ -28,6 +60,8 @@ export default function LoginPage() {
             <input
               type="password"
               placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
 

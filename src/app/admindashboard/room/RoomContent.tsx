@@ -107,7 +107,7 @@ export default function RuanganPage() {
       ...prevRooms,
       {
         ...newRoom,
-        id: `R-${prevRooms.length + 1}`,
+        id: `JTE-${prevRooms.length + 1}`,
         capacity: Number(newRoom.capacity),
         rating: 0,
         course: "-",
@@ -254,6 +254,13 @@ export default function RuanganPage() {
             )}
           </div>
 
+          <button
+            onClick={() => setIsPopupOpen(true)}
+            className="bg-black text-white hover:bg-gray-800 px-4 py-2 rounded-md flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Tambah
+          </button>
         </div>
       </div>
 
@@ -336,7 +343,7 @@ export default function RuanganPage() {
           {filteredRooms.map((room) => (
             <div
               key={room.id}
-              className="border border-gray-200 rounded-lg overflow-hidden bg-white p-6 hover:shadow-md transition-shadow"
+              className="border border-gray-200 rounded-lg overflow-hidden  bg-white p-6 hover:shadow-md transition-shadow"
             >
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-semibold text-black">{room.id}</h3>

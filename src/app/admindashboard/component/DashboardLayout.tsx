@@ -5,11 +5,11 @@ import { usePathname } from "next/navigation";
 import Footer from "@/app/components/Footer";
 
 const pageTitles: Record<string, string> = {
-  "/dashboard": "Dashboard",
-  "/dashboard/room": "Ruangan",
-  "/dashboard/schedule": "Jadwal",
-  "/dashboard/reservasi": "Reservasi",
-  "/dashboard/editor-profile": "Edit Profi",
+  "/admindashboard": "Dashboard (Admin)",
+  "/admindashboard/room": "Ruangan (Admin)",
+  "/admindashboard/schedule": "Jadwal (Admin)",
+  "/admindashboard/reservasi": "Reservasi (Admin)",
+  "/admindashboard/editor-profile": "Edit Profil (Admin)",
 };
 
 export default function DashboardLayout({
@@ -19,6 +19,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const pageTitle = pageTitles[pathname] || "Dashboard";
+
 
   return (
     <div className="flex flex-col min-h-screen bg-white px-6 md:px-8">
