@@ -29,7 +29,7 @@ type Room = {
 // Data ruangan contoh
 const roomsData: Room[] = [
   {
-    id: "R-101",
+    id: "JTE-01",
     course: "Algoritma dan Pemrograman",
     lecturer: "Dr. Budi Santoso",
     time: "Senin, 08:00 - 10:30",
@@ -39,7 +39,7 @@ const roomsData: Room[] = [
     facilities: ["Proyektor", "AC", "Whiteboard"],
   },
   {
-    id: "R-102",
+    id: "JTE-02",
     course: "Basis Data",
     lecturer: "Prof. Siti Rahayu",
     time: "Selasa, 13:00 - 15:30",
@@ -49,7 +49,7 @@ const roomsData: Room[] = [
     facilities: ["Proyektor", "AC", "Whiteboard"],
   },
   {
-    id: "R-103",
+    id: "JTE-03",
     course: "Jaringan Komputer",
     lecturer: "Dr. Ahmad Wijaya",
     time: "Rabu, 10:00 - 12:30",
@@ -59,7 +59,7 @@ const roomsData: Room[] = [
     facilities: ["Proyektor", "AC", "Whiteboard"],
   },
   {
-    id: "R-104",
+    id: "JTE-04",
     course: "Kecerdasan Buatan",
     lecturer: "Dr. Maya Putri",
     time: "Kamis, 08:00 - 10:30",
@@ -68,7 +68,7 @@ const roomsData: Room[] = [
     capacity: 25,
   },
   {
-    id: "R-105",
+    id: "JTE-05",
     course: "Sistem Operasi",
     lecturer: "Prof. Darmawan",
     time: "Jumat, 13:00 - 15:30",
@@ -265,7 +265,7 @@ export default function RuanganPage() {
       </div>
 
       <div className="mb-6">
-        <div className="inline-flex bg-gray-100 p-1 rounded-md">
+        <div className="inline-flex bg-gray-100 p-1 text-sm rounded-md">
           <button
             onClick={() => setView("list")}
             className={`px-4 py-2 rounded-md text-black font-medium ${
@@ -286,26 +286,26 @@ export default function RuanganPage() {
       </div>
 
       {view === "list" ? (
-        <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
+        <div className="overflow-x-auto border border-gray-200 rounded-lg ">
           <table className="w-full min-w-full border-collapse">
-            <thead className="bg-gray-50">
-              <tr className="border-b border-gray-200">
-                <th className="py-3 px-4 text-left font-medium text-black">
+            <thead>
+              <tr className="border-b text-sm border-gray-200">
+                <th className="py-3 px-4 text-left font-medium text-gray-500">
                   Kode
                 </th>
-                <th className="py-3 px-4 text-left font-medium text-black">
+                <th className="py-3 px-4 text-left font-medium text-gray-500">
                   Mata Kuliah
                 </th>
-                <th className="py-3 px-4 text-left font-medium text-black">
+                <th className="py-3 px-4 text-left font-medium text-gray-500">
                   Dosen
                 </th>
-                <th className="py-3 px-4 text-left font-medium text-black">
+                <th className="py-3 px-4 text-left font-medium text-gray-500">
                   Waktu
                 </th>
-                <th className="py-3 px-4 text-left font-medium text-black">
+                <th className="py-3 px-4 text-left font-medium text-gray-500">
                   Status
                 </th>
-                <th className="py-3 px-4 text-left font-medium text-black">
+                <th className="py-3 px-4 text-left font-medium text-gray-500">
                   Rating
                 </th>
               </tr>
@@ -316,12 +316,12 @@ export default function RuanganPage() {
                   key={room.id}
                   className="border-b border-gray-200 hover:bg-gray-50"
                 >
-                  <td className="py-4 px-4 text-black font-medium">
+                  <td className="py-4 px-4 text-black text-sm font-medium">
                     {room.id}
                   </td>
-                  <td className="py-4 px-4 text-black">{room.course}</td>
-                  <td className="py-4 px-4 text-black">{room.lecturer}</td>
-                  <td className="py-4 px-4 text-black">{room.time}</td>
+                  <td className="py-4 px-4 text-black text-sm">{room.course}</td>
+                  <td className="py-4 px-4 text-black text-sm">{room.lecturer}</td>
+                  <td className="py-4 px-4 text-black text-sm">{room.time}</td>
                   <td className="py-4 px-4">
                     {renderStatusBadge(room.status)}
                   </td>
