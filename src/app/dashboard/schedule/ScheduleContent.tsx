@@ -37,7 +37,7 @@ export default function SchedulePage() {
 
   return (
     <div className="text-black space-y-6">
-      <p className="text-gray-600 text-center sm:text-left">
+      <p className="text-gray-600 sm:text-left">
         Pilih mata kuliah yang Anda kontrak untuk melihat jadwal.
       </p>
   
@@ -115,7 +115,7 @@ export default function SchedulePage() {
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead className="border-b border-gray-300 pb-3">
-                  <tr className="text-left text-gray-600">
+                  <tr className="text-left text-sm text-gray-600">
                     <th className="p-2 font-medium">Pilih</th>
                     <th className="p-2 font-medium">Mata Kuliah</th>
                     <th className="p-2 font-medium">Dosen</th>
@@ -126,7 +126,7 @@ export default function SchedulePage() {
                 </thead>
                 <tbody>
                   {filteredCourses.map((course) => (
-                    <tr key={course.id} className="border-b border-gray-300">
+                    <tr key={course.id} className="border-b text-sm border-gray-300">
                       <td className="p-2">
                         <input
                           type="checkbox"
@@ -135,7 +135,7 @@ export default function SchedulePage() {
                           className="w-5 h-5"
                         />
                       </td>
-                      <td className="p-2">{course.name}</td>
+                      <td className="p-2 t">{course.name}</td>
                       <td className="p-2">{course.lecturer}</td>
                       <td className="p-2">{course.time}</td>
                       <td className="p-2">{course.room}</td>
