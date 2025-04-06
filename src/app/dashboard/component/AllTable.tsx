@@ -3,64 +3,22 @@
 import { Calendar, Clock } from "lucide-react";
 
 type Reservation = {
-  roomCode: string;
+  id: string;
+  room: string;
   user: string;
   purpose: string;
   date: string;
   time: string;
   status: "Menunggu" | "Disetujui" | "Ditolak";
   timestamp: string;
+  rejectionReason?: string;
 };
 
-const reservations: Reservation[] = [
-  {
-    roomCode: "R-101",
-    user: "Siti Rahayu",
-    purpose: "Seminar Tugas Akhir",
-    date: "2023-06-20",
-    time: "13:00 - 15:00",
-    status: "Menunggu",
-    timestamp: "2023-06-15 10:30:45",
-  },
-  {
-    roomCode: "R-102",
-    user: "Ahmad Wijaya",
-    purpose: "Rapat Proyek Akhir",
-    date: "2023-06-21",
-    time: "09:00 - 11:00",
-    status: "Disetujui",
-    timestamp: "2023-06-14 14:20:10",
-  },
-  {
-    roomCode: "R-103",
-    user: "Maya Putri",
-    purpose: "Diskusi Kelompok",
-    date: "2023-06-22",
-    time: "14:00 - 16:00",
-    status: "Ditolak",
-    timestamp: "2023-06-13 09:15:33",
-  },
-  {
-    roomCode: "R-104",
-    user: "Darmawan",
-    purpose: "Ujian Susulan",
-    date: "2023-06-23",
-    time: "10:00 - 12:00",
-    status: "Menunggu",
-    timestamp: "2023-06-12 11:45:20",
-  },
-  {
-    roomCode: "R-105",
-    user: "Rina Wijaya",
-    purpose: "Workshop Programming",
-    date: "2023-06-24",
-    time: "08:00 - 10:00",
-    status: "Disetujui",
-    timestamp: "2023-06-11 08:30:15",
-  },
-];
+interface AllTableProps {
+  data?: Reservation[];
+}
 
-export default function AllTable() {
+export default function AllTable({ data = [] }: AllTableProps) {
   const getStatusStyle = (status: string) => {
     switch (status) {
       case "Menunggu":
@@ -113,12 +71,12 @@ export default function AllTable() {
           </thead>
 
           <tbody className="divide-y divide-gray-100">
-            {reservations.map((reservation, index) => (
+            {data.map((reservation, index) => (
               <tr
                 key={index}
                 className="hover:bg-gray-50 border-b border-gray-100"
               >
-                <td className="p-4 font-medium">{reservation.roomCode}</td>
+                <td className="p-4 font-medium">{reservation.room}</td>
                 <td className="p-4">{reservation.user}</td>
                 <td className="p-4">{reservation.purpose}</td>
                 <td className="p-4">
@@ -151,7 +109,7 @@ export default function AllTable() {
 
       {/* Mobile View */}
       <div className="md:hidden space-y-4">
-        {reservations.map((reservation, index) => (
+        {data.map((reservation, index) => (
           <div
             key={index}
             className="p-4 border border-gray-100 rounded-lg shadow-sm"
@@ -159,7 +117,7 @@ export default function AllTable() {
             <div className="space-y-3">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-semibold">{reservation.roomCode}</h3>
+                  <h3 className="font-semibold">{reservation.room}</h3>
                   <p className="text-gray-600">{reservation.user}</p>
                 </div>
                 <span

@@ -4,62 +4,20 @@ import { Calendar, Clock, Eye, X } from "lucide-react";
 import { useState } from "react";
 
 type Reservation = {
-  roomCode: string;
+  id: string;
+  room: string;
   user: string;
   purpose: string;
   date: string;
   time: string;
+  status: "Menunggu" | "Disetujui" | "Ditolak";
   timestamp: string;
-  rejectionReason: string;
+  rejectionReason?: string;
 };
 
-const reservations: Reservation[] = [
-  {
-    roomCode: "R-103",
-    user: "Maya Putri",
-    purpose: "Diskusi Kelompok",
-    date: "2023-06-22",
-    time: "14:00 - 16:00",
-    timestamp: "2023-06-13 09:15:33",
-    rejectionReason: "Ruangan sudah dipesan untuk kegiatan lain",
-  },
-  {
-    roomCode: "R-112",
-    user: "Agus Supriyadi",
-    purpose: "Rapat Alumni",
-    date: "2023-07-01",
-    time: "09:00 - 11:00",
-    timestamp: "2023-06-14 13:10:50",
-    rejectionReason: "Jadwal bertabrakan dengan acara fakultas",
-  },
-  {
-    roomCode: "R-113",
-    user: "Lina Marlina",
-    purpose: "Pelatihan Desain",
-    date: "2023-07-02",
-    time: "13:00 - 15:00",
-    timestamp: "2023-06-15 08:45:15",
-    rejectionReason: "Dokumen persyaratan tidak lengkap",
-  },
-  {
-    roomCode: "R-114",
-    user: "Hendra Gunawan",
-    purpose: "Seminar IoT",
-    date: "2023-07-03",
-    time: "10:30 - 12:30",
-    timestamp: "2023-06-12 14:30:20",
-    rejectionReason: "Melebihi kapasitas ruangan",
-  },
-  {
-    roomCode: "R-115",
-    user: "Sari Indah",
-    purpose: "Workshop Kreativitas",
-    date: "2023-07-04",
-    time: "14:00 - 16:00",
-    timestamp: "2023-06-11 16:15:10",
-    rejectionReason: "Sudah ada reservasi sebelumnya",
-  },
-];
+interface RefusedTableProps {
+  data?: Reservation[];
+}
 
 const DetailModal = ({
   reservation,
@@ -85,7 +43,7 @@ const DetailModal = ({
 
         <div className="p-6 grid grid-cols-2 gap-4">
           <div className="col-span-2">
-            <h3 className="font-semibold text-lg">{reservation.roomCode}</h3>
+            <h3 className="font-semibold text-lg">{reservation.room}</h3>
           </div>
 
           <div className="col-span-2 border-t border-gray-100 pt-4">
@@ -128,9 +86,14 @@ const DetailModal = ({
   );
 };
 
-export default function RefusedTable() {
+export default function RefusedTable({ data = [] }: RefusedTableProps) {
   const [selectedReservation, setSelectedReservation] =
     useState<Reservation | null>(null);
+
+  // Filter to only show refused reservations
+  const refusedReservations = data.filter(
+    (reservation) => reservation.status === "Ditolak"
+  );
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
@@ -169,12 +132,12 @@ export default function RefusedTable() {
           </thead>
 
           <tbody className="divide-y divide-gray-100">
-            {reservations.map((reservation, index) => (
+            {refusedReservations.map((reservation, index) => (
               <tr
                 key={index}
                 className="hover:bg-gray-50 border-b border-gray-100"
               >
-                <td className="p-4 font-medium">{reservation.roomCode}</td>
+                <td className="p-4 font-medium">{reservation.room}</td>
                 <td className="p-4">{reservation.user}</td>
                 <td className="p-4">{reservation.purpose}</td>
                 <td className="p-4">
@@ -195,7 +158,7 @@ export default function RefusedTable() {
                 <td className="p-4">
                   <button
                     onClick={() => setSelectedReservation(reservation)}
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-gray-400 hover:text-gray-800"
                   >
                     <Eye className="w-5 h-5" />
                   </button>
@@ -208,7 +171,7 @@ export default function RefusedTable() {
 
       {/* Mobile View */}
       <div className="md:hidden space-y-4">
-        {reservations.map((reservation, index) => (
+        {refusedReservations.map((reservation, index) => (
           <div
             key={index}
             className="p-4 border border-gray-100 rounded-lg shadow-sm"
@@ -216,7 +179,7 @@ export default function RefusedTable() {
             <div className="space-y-3">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-semibold">{reservation.roomCode}</h3>
+                  <h3 className="font-semibold">{reservation.room}</h3>
                   <p className="text-gray-600">{reservation.user}</p>
                 </div>
                 <button

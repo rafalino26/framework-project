@@ -3,58 +3,27 @@
 import { Calendar, Clock } from "lucide-react";
 
 type Reservation = {
-  roomCode: string;
+  id: string;
+  room: string;
   user: string;
   purpose: string;
   date: string;
   time: string;
+  status: "Menunggu" | "Disetujui" | "Ditolak";
   timestamp: string;
+  rejectionReason?: string;
 };
 
-const reservations: Reservation[] = [
-  {
-    roomCode: "R-101",
-    user: "Siti Rahayu",
-    purpose: "Seminar Tugas Akhir",
-    date: "2023-06-20",
-    time: "13:00 - 15:00",
-    timestamp: "2023-06-15 10:30:45",
-  },
-  {
-    roomCode: "R-104",
-    user: "Darmawan",
-    purpose: "Ujian Susulan",
-    date: "2023-06-23",
-    time: "10:00 - 12:00",
-    timestamp: "2023-06-12 11:45:20",
-  },
-  {
-    roomCode: "R-106",
-    user: "Budi Santoso",
-    purpose: "Presentasi Proposal",
-    date: "2023-06-25",
-    time: "15:00 - 17:00",
-    timestamp: "2023-06-14 09:10:25",
-  },
-  {
-    roomCode: "R-107",
-    user: "Ani Lestari",
-    purpose: "Pelatihan Software",
-    date: "2023-06-26",
-    time: "13:30 - 15:30",
-    timestamp: "2023-06-13 14:55:10",
-  },
-  {
-    roomCode: "R-108",
-    user: "Fajar Nugroho",
-    purpose: "Rapat Organisasi",
-    date: "2023-06-27",
-    time: "08:30 - 10:30",
-    timestamp: "2023-06-12 16:20:45",
-  },
-];
+interface WaitingTableProps {
+  data?: Reservation[];
+}
 
-export default function WaitingTable() {
+export default function WaitingTable({ data = [] }: WaitingTableProps) {
+  // Filter to only show waiting reservations
+  const waitingReservations = data.filter(
+    (reservation) => reservation.status === "Menunggu"
+  );
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
       <div className="mb-6">
@@ -89,12 +58,12 @@ export default function WaitingTable() {
           </thead>
 
           <tbody className="divide-y divide-gray-100">
-            {reservations.map((reservation, index) => (
+            {waitingReservations.map((reservation, index) => (
               <tr
                 key={index}
                 className="hover:bg-gray-50 border-b border-gray-100"
               >
-                <td className="p-4 font-medium">{reservation.roomCode}</td>
+                <td className="p-4 font-medium">{reservation.room}</td>
                 <td className="p-4">{reservation.user}</td>
                 <td className="p-4">{reservation.purpose}</td>
                 <td className="p-4">
@@ -118,7 +87,7 @@ export default function WaitingTable() {
 
       {/* Mobile View */}
       <div className="md:hidden space-y-4">
-        {reservations.map((reservation, index) => (
+        {waitingReservations.map((reservation, index) => (
           <div
             key={index}
             className="p-4 border border-gray-100 rounded-lg shadow-sm"
@@ -126,7 +95,7 @@ export default function WaitingTable() {
             <div className="space-y-3">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-semibold">{reservation.roomCode}</h3>
+                  <h3 className="font-semibold">{reservation.room}</h3>
                   <p className="text-gray-600">{reservation.user}</p>
                 </div>
               </div>

@@ -4,56 +4,20 @@ import { Calendar, Clock, Eye, X } from "lucide-react";
 import { useState } from "react";
 
 type Reservation = {
-  roomCode: string;
+  id: string;
+  room: string;
   user: string;
   purpose: string;
   date: string;
   time: string;
+  status: "Menunggu" | "Disetujui" | "Ditolak";
   timestamp: string;
+  rejectionReason?: string;
 };
 
-const reservations: Reservation[] = [
-  {
-    roomCode: "R-102",
-    user: "Ahmad Wijaya",
-    purpose: "Rapat Proyek Akhir",
-    date: "2023-06-21",
-    time: "09:00 - 11:00",
-    timestamp: "2023-06-14 14:20:10",
-  },
-  {
-    roomCode: "R-105",
-    user: "Rina Wijaya",
-    purpose: "Workshop Programming",
-    date: "2023-06-24",
-    time: "08:00 - 10:00",
-    timestamp: "2023-06-11 08:30:15",
-  },
-  {
-    roomCode: "R-109",
-    user: "Dewi Kusuma",
-    purpose: "Seminar Kewirausahaan",
-    date: "2023-06-28",
-    time: "13:00 - 15:00",
-    timestamp: "2023-06-15 10:15:30",
-  },
-  {
-    roomCode: "R-110",
-    user: "Eko Prasetyo",
-    purpose: "Pelatihan Jaringan",
-    date: "2023-06-29",
-    time: "10:00 - 12:00",
-    timestamp: "2023-06-14 11:25:40",
-  },
-  {
-    roomCode: "R-111",
-    user: "Citra Ayu",
-    purpose: "Diskusi Tesis",
-    date: "2023-06-30",
-    time: "14:30 - 16:30",
-    timestamp: "2023-06-13 15:45:20",
-  },
-];
+interface AcceptedTableProps {
+  data?: Reservation[];
+}
 
 const DetailModal = ({
   reservation,
@@ -79,7 +43,7 @@ const DetailModal = ({
 
         <div className="p-6 grid grid-cols-2 gap-4">
           <div className="col-span-2">
-            <h3 className="font-semibold text-lg">{reservation.roomCode}</h3>
+            <h3 className="font-semibold text-lg">{reservation.room}</h3>
           </div>
 
           <div className="col-span-2 border-t border-gray-100 pt-4">
@@ -118,9 +82,14 @@ const DetailModal = ({
   );
 };
 
-export default function AcceptedTable() {
+export default function AcceptedTable({ data = [] }: AcceptedTableProps) {
   const [selectedReservation, setSelectedReservation] =
     useState<Reservation | null>(null);
+
+  // Filter to only show accepted reservations
+  const acceptedReservations = data.filter(
+    (reservation) => reservation.status === "Disetujui"
+  );
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
@@ -161,12 +130,12 @@ export default function AcceptedTable() {
           </thead>
 
           <tbody className="divide-y divide-gray-100">
-            {reservations.map((reservation, index) => (
+            {acceptedReservations.map((reservation, index) => (
               <tr
                 key={index}
                 className="hover:bg-gray-50 border-b border-gray-100"
               >
-                <td className="p-4 font-medium">{reservation.roomCode}</td>
+                <td className="p-4 font-medium">{reservation.room}</td>
                 <td className="p-4">{reservation.user}</td>
                 <td className="p-4">{reservation.purpose}</td>
                 <td className="p-4">
@@ -185,7 +154,7 @@ export default function AcceptedTable() {
                 <td className="p-4">
                   <button
                     onClick={() => setSelectedReservation(reservation)}
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-gray-400 hover:text-gray-800"
                   >
                     <Eye className="w-5 h-5" />
                   </button>
@@ -198,7 +167,7 @@ export default function AcceptedTable() {
 
       {/* Mobile View */}
       <div className="md:hidden space-y-4">
-        {reservations.map((reservation, index) => (
+        {acceptedReservations.map((reservation, index) => (
           <div
             key={index}
             className="p-4 border border-gray-100 rounded-lg shadow-sm"
@@ -206,7 +175,7 @@ export default function AcceptedTable() {
             <div className="space-y-3">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-semibold">{reservation.roomCode}</h3>
+                  <h3 className="font-semibold">{reservation.room}</h3>
                   <p className="text-gray-600">{reservation.user}</p>
                 </div>
                 <button
