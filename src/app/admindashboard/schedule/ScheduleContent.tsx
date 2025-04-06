@@ -3,8 +3,9 @@
 import { useState } from "react"
 import { FiChevronDown } from "react-icons/fi"
 import { FaBook, FaUser, FaClock, FaMapMarkerAlt, FaCalendarAlt } from "react-icons/fa";
+import AddSchedulePopup from "../component/AddSchedulePopup";
 
-const courses = [
+const initialCourses = [
   { id: "MK001", name: "Algoritma dan Pemrograman", lecturer: "Dr. Budi Santoso", time: "Senin, 08:00 - 10:30", room: "JTE-01", semester: "1", day: "Senin" },
   { id: "MK002", name: "Basis Data", lecturer: "Prof. Siti Rahayu", time: "Selasa, 13:00 - 15:30", room: "JTE-02", semester: "2", day: "Selasa" },
   { id: "MK003", name: "Jaringan Komputer", lecturer: "Dr. Ahmad Wijaya", time: "Rabu, 10:00 - 12:30", room: "JTE-03", semester: "3", day: "Rabu" },
@@ -16,10 +17,12 @@ const courses = [
 ]
 
 export default function SchedulePage() {
+  const [courses, setCourses] = useState(initialCourses);
   const [selectedCourses, setSelectedCourses] = useState<string[]>([])
   const [semester, setSemester] = useState("all")
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("courses"); 
+  const [isPopupOpen, setIsPopupOpen] = useState(false); 
 
   const semesters = [
     { value: "all", label: "Semua Semester" },
@@ -41,6 +44,10 @@ export default function SchedulePage() {
   const handleCourseToggle = (courseId: string) => {
     setSelectedCourses((prev) => (prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId]))
   }
+
+  const handleAddSchedule = (newSchedule: any) => {
+    setCourses((prev) => [...prev, newSchedule]);
+  };
 
   return (
     <div className="text-black space-y-6">
@@ -77,7 +84,6 @@ export default function SchedulePage() {
             </div>
           )}
         </div>
-  
         {/* Badge & Reset Button */}
         <div className="flex items-center gap-4">
           <span className="px-3 py-1 text-xs border border-black font-semibold text-black rounded-full bg-transparent">
@@ -92,26 +98,44 @@ export default function SchedulePage() {
           </button>
         </div>
       </div>
-  
-      {/* Tabs */}
-      <div className="flex bg-gray-100 p-1 rounded-lg w-fit mx-auto sm:mx-0">
+
+      {/*Tabs + Button */}
+      <div className="flex items-center justify-between w-full">
+        {/* Tabs */}
+        <div className="flex bg-gray-100 p-1 rounded-lg w-fit mx-auto sm:mx-0">
+          <button
+            className={`px-4 py-2 text-sm rounded-md ${
+              activeTab === "courses" ? "bg-white font-semibold" : "text-gray-500"
+            }`}
+            onClick={() => setActiveTab("courses")}
+          >
+            Pilihan Mata Kuliah
+          </button>
+          <button
+            className={`px-4 py-2 text-sm rounded-md ${
+              activeTab === "schedule" ? "bg-white font-semibold" : "text-gray-500"
+            }`}
+            onClick={() => selectedCourses.length > 0 && setActiveTab("schedule")}
+            disabled={selectedCourses.length === 0}
+          >
+            Jadwal
+          </button>
+        </div>
+
+        {/* Tombol Tambah Jadwal */}
         <button
-          className={`px-4 py-2 text-sm rounded-md ${
-            activeTab === "courses" ? "bg-white font-semibold" : "text-gray-500"
-          }`}
-          onClick={() => setActiveTab("courses")}
+          className="px-4 py-2 bg-black text-white text-sm rounded-md hover:bg-gray-800 ml-auto"
+          onClick={() => setIsPopupOpen(true)}
         >
-          Pilihan Mata Kuliah
+          + Tambah
         </button>
-        <button
-          className={`px-4 py-2 text-sm rounded-md ${
-            activeTab === "schedule" ? "bg-white font-semibold" : "text-gray-500"
-          }`}
-          onClick={() => selectedCourses.length > 0 && setActiveTab("schedule")}
-          disabled={selectedCourses.length === 0}
-        >
-          Jadwal
-        </button>
+
+        {/* Popup */}
+        <AddSchedulePopup
+          isOpen={isPopupOpen}
+          onClose={() => setIsPopupOpen(false)}
+          onAddSchedule={handleAddSchedule}
+        />
       </div>
   
       {/* Card Container */}
