@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Search,
   Filter,
@@ -10,10 +10,13 @@ import {
   Clock,
   Star,
   MoreVertical,
+  Pencil,
+  Trash2,
+  X,
 } from "lucide-react";
-import Link from "next/link";
 import AddRoomPopup from "../component/AddRoomPopup";
 import DetailRoomPopup from "../component/DetailRoomPopup";
+import ListDetailPopup from "../component/ListDetailPopup";
 
 type Room = {
   id: string;
@@ -24,6 +27,12 @@ type Room = {
   rating: number;
   capacity: number;
   facilities?: string[];
+};
+
+type Notification = {
+  id: string;
+  message: string;
+  type: "success" | "error" | "info";
 };
 
 // Data ruangan contoh
@@ -87,7 +96,47 @@ export default function RuanganPage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isDetailPopupOpen, setIsDetailPopupOpen] = useState(false);
+  const [isListDetailPopupOpen, setIsListDetailPopupOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (selectedRoomId) {
+        const dropdownRef = dropdownRefs.current[selectedRoomId];
+        if (dropdownRef && !dropdownRef.contains(event.target as Node)) {
+          setSelectedRoomId(null);
+        }
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [selectedRoomId]);
+
+  // Simple notification system
+  const showNotification = (
+    message: string,
+    type: "success" | "error" | "info" = "success"
+  ) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setNotifications((prev) => [...prev, { id, message, type }]);
+
+    // Auto remove notification after 3 seconds
+    setTimeout(() => {
+      setNotifications((prev) =>
+        prev.filter((notification) => notification.id !== id)
+      );
+    }, 3000);
+  };
 
   // Filter ruangan berdasarkan pencarian dan status
   const filteredRooms = rooms.filter((room) => {
@@ -115,6 +164,13 @@ export default function RuanganPage() {
         time: "-",
       },
     ]);
+  };
+
+  const handleDeleteRoom = (roomId: string) => {
+    setRooms(rooms.filter((room) => room.id !== roomId));
+    setShowDeleteConfirm(false);
+    setRoomToDelete(null);
+    showNotification(`Ruangan ${roomId} berhasil dihapus`);
   };
 
   // Render bintang rating
@@ -166,7 +222,36 @@ export default function RuanganPage() {
   };
 
   return (
-    <div className="container mx-auto  bg-white text-black">
+    <div className="container mx-auto bg-white text-black">
+      {/* Notifications */}
+      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
+        {notifications.map((notification) => (
+          <div
+            key={notification.id}
+            className={`px-4 py-3 rounded-md shadow-md flex justify-between items-center ${
+              notification.type === "success"
+                ? "bg-green-50 text-green-800 border border-green-200"
+                : notification.type === "error"
+                ? "bg-red-50 text-red-800 border border-red-200"
+                : "bg-blue-50 text-blue-800 border border-blue-200"
+            }`}
+            style={{ minWidth: "300px" }}
+          >
+            <span>{notification.message}</span>
+            <button
+              onClick={() =>
+                setNotifications((prev) =>
+                  prev.filter((n) => n.id !== notification.id)
+                )
+              }
+              className="ml-2 text-gray-500 hover:text-gray-700"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        ))}
+      </div>
+
       <div className="mb-6">
         <p className="text-gray-600 font-normal">
           Kelola dan lihat informasi ruangan kelas yang tersedia.
@@ -308,6 +393,9 @@ export default function RuanganPage() {
                 <th className="py-3 px-4 text-left font-medium text-gray-500">
                   Rating
                 </th>
+                <th className="py-3 px-4 text-left font-medium text-gray-500">
+                  Aksi
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -319,8 +407,12 @@ export default function RuanganPage() {
                   <td className="py-4 px-4 text-black text-sm font-medium">
                     {room.id}
                   </td>
-                  <td className="py-4 px-4 text-black text-sm">{room.course}</td>
-                  <td className="py-4 px-4 text-black text-sm">{room.lecturer}</td>
+                  <td className="py-4 px-4 text-black text-sm">
+                    {room.course}
+                  </td>
+                  <td className="py-4 px-4 text-black text-sm">
+                    {room.lecturer}
+                  </td>
                   <td className="py-4 px-4 text-black text-sm">{room.time}</td>
                   <td className="py-4 px-4">
                     {renderStatusBadge(room.status)}
@@ -333,6 +425,65 @@ export default function RuanganPage() {
                       </span>
                     </div>
                   </td>
+                  <td className="py-4 px-4 relative">
+                    <div
+                      className="relative"
+                      ref={(el: HTMLDivElement | null) => {
+                        if (el) dropdownRefs.current[room.id] = el;
+                      }}
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedRoomId(
+                            selectedRoomId === room.id ? null : room.id
+                          );
+                        }}
+                        className="p-1 rounded-md hover:bg-gray-100"
+                      >
+                        <MoreVertical className="h-5 w-5 text-gray-500" />
+                      </button>
+
+                      {selectedRoomId === room.id && (
+                        <div
+                          className="absolute right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-20"
+                          style={{ minWidth: "150px" }}
+                        >
+                          <div
+                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
+                            onClick={() => {
+                              setSelectedRoom(room);
+                              setIsListDetailPopupOpen(true);
+                              setSelectedRoomId(null);
+                            }}
+                          >
+                            Detail
+                          </div>
+                          <div
+                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black flex items-center"
+                            onClick={() => {
+                              // Handle edit action
+                              setSelectedRoomId(null);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit
+                          </div>
+                          <div
+                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-red-500 flex items-center"
+                            onClick={() => {
+                              setShowDeleteConfirm(true);
+                              setRoomToDelete(room);
+                              setSelectedRoomId(null);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Hapus
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -343,7 +494,7 @@ export default function RuanganPage() {
           {filteredRooms.map((room) => (
             <div
               key={room.id}
-              className="border border-gray-200 rounded-lg overflow-hidden  bg-white p-6 hover:shadow-md transition-shadow"
+              className="border border-gray-200 rounded-lg overflow-hidden bg-white p-6 hover:shadow-md transition-shadow"
             >
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-semibold text-black">{room.id}</h3>
@@ -377,37 +528,107 @@ export default function RuanganPage() {
                 </span>
               </div>
 
-              <div className="mt-4 pt-4">
-                {" "}
+              <div className="mt-4 flex justify-between items-center">
                 <button
                   onClick={() => {
                     setSelectedRoom(room);
                     setIsDetailPopupOpen(true);
                   }}
-                  className="px-4 py-2 border border-gray-200 rounded-md text-black font-medium w-full hover:border-gray-300 transition-colors"
+                  className="px-3 py-1.5 border border-gray-200 rounded-md text-black text-sm font-medium hover:border-gray-300 transition-colors"
                 >
                   Detail
                 </button>
+                <div className="flex gap-2">
+                  <button
+                    className="p-1.5 rounded-full hover:bg-gray-100"
+                    onClick={() => {
+                      // Handle edit action
+                    }}
+                  >
+                    <Pencil className="h-5 w-5" />
+                  </button>
+                  <button
+                    className="p-1.5 rounded-full hover:bg-gray-100"
+                    onClick={() => {
+                      setShowDeleteConfirm(true);
+                      setRoomToDelete(room);
+                    }}
+                  >
+                    <Trash2 className="h-5 w-5 text-red-500" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
-      
+
       <AddRoomPopup
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
         onAddRoom={handleAddRoom}
       />
+
       {selectedRoom && (
-        <DetailRoomPopup
-          isOpen={isDetailPopupOpen}
-          onClose={() => setIsDetailPopupOpen(false)}
-          room={{
-            ...selectedRoom,
-            facilities: ["Proyektor", "AC", "Whiteboard"],
-          }}
-        />
+        <>
+          <DetailRoomPopup
+            isOpen={isDetailPopupOpen}
+            onClose={() => setIsDetailPopupOpen(false)}
+            room={{
+              ...selectedRoom,
+              facilities: selectedRoom.facilities || [
+                "Proyektor",
+                "AC",
+                "Whiteboard",
+              ],
+            }}
+          />
+
+          <ListDetailPopup
+            isOpen={isListDetailPopupOpen}
+            onClose={() => setIsListDetailPopupOpen(false)}
+            room={{
+              ...selectedRoom,
+              facilities: selectedRoom.facilities || [
+                "Proyektor",
+                "AC",
+                "Whiteboard",
+              ],
+            }}
+            onUpdateRoom={() => {
+              /* Implementasi update room */
+            }}
+          />
+        </>
+      )}
+
+      {/* Delete Confirmation Popup */}
+      {showDeleteConfirm && roomToDelete && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-medium mb-4 text-black">
+              Konfirmasi Hapus
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Apakah Anda yakin ingin menghapus ruangan {roomToDelete.id}?
+              Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-black hover:bg-gray-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => handleDeleteRoom(roomToDelete.id)}
+                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+              >
+                Hapus
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
