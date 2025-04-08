@@ -16,6 +16,7 @@ export default function LoginPage() {
   const users = [
     { email: "admin@tes.com", password: "admin123", role: "admin" },
     { email: "user@tes.com", password: "user123", role: "user" },
+    { email: "superadmin@tes.com", password: "superadmin123", role: "superadmin" },
   ];
 
   // Function untuk menangani login
@@ -27,7 +28,13 @@ export default function LoginPage() {
 
     if (user) {
       // Redirect ke dashboard masing-masing
-      router.push(user.role === "admin" ? "/admindashboard" : "/dashboard");
+      if (user.role === "admin") {
+        router.push("/admindashboard");
+      } else if (user.role === "superadmin") {
+        router.push("/superadmindashboard");
+      } else {
+        router.push("/dashboard");
+      }
     } else {
       alert("Email atau password salah!");
     }
