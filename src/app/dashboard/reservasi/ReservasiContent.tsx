@@ -271,7 +271,7 @@ export default function ReservasiContent() {
             <button
               key={mode}
               onClick={() => handleViewModeChange(mode as typeof viewMode)}
-              className={`px-3 md:px-4 py-1 md:py-2 rounded-md font-medium whitespace-nowrap ${
+              className={`px-3 md:px-4 py-1 md:py-2 rounded-md text-sm whitespace-nowrap ${
                 viewMode === mode ? "bg-white shadow-sm" : ""
               }`}
             >
