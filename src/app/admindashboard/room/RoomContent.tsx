@@ -10,13 +10,13 @@ import {
   Clock,
   Star,
   MoreVertical,
-  Pencil,
   Trash2,
   X,
 } from "lucide-react";
 import AddRoomPopup from "../component/AddRoomPopup";
 import DetailRoomPopup from "../component/DetailRoomPopup";
 import ListDetailPopup from "../component/ListDetailPopup";
+import EditRoomPopup from "../component/EditRoomPopup";
 
 type Room = {
   id: string;
@@ -97,6 +97,7 @@ export default function RuanganPage() {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isDetailPopupOpen, setIsDetailPopupOpen] = useState(false);
   const [isListDetailPopupOpen, setIsListDetailPopupOpen] = useState(false);
+  const [isEditPopupOpen, setIsEditPopupOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -156,14 +157,22 @@ export default function RuanganPage() {
       ...prevRooms,
       {
         ...newRoom,
-        id: `JTE-${prevRooms.length + 1}`,
+        id: newRoom.id || `JTE-${prevRooms.length + 1}`,
         capacity: Number(newRoom.capacity),
         rating: 0,
-        course: "-",
-        lecturer: "-",
-        time: "-",
+        course: newRoom.course || "-",
+        lecturer: newRoom.lecturer || "-",
+        time: newRoom.time || "-",
       },
     ]);
+    showNotification(`Ruangan ${newRoom.id} berhasil ditambahkan`);
+  };
+
+  const handleUpdateRoom = (updatedRoom: Room) => {
+    setRooms((prevRooms) =>
+      prevRooms.map((room) => (room.id === updatedRoom.id ? updatedRoom : room))
+    );
+    showNotification(`Ruangan ${updatedRoom.id} berhasil diperbarui`);
   };
 
   const handleDeleteRoom = (roomId: string) => {
@@ -171,6 +180,14 @@ export default function RuanganPage() {
     setShowDeleteConfirm(false);
     setRoomToDelete(null);
     showNotification(`Ruangan ${roomId} berhasil dihapus`);
+  };
+
+  const handleEditRoom = (room: Room) => {
+    setSelectedRoom(room);
+    setIsEditPopupOpen(true);
+    setIsListDetailPopupOpen(false);
+    setIsDetailPopupOpen(false);
+    setSelectedRoomId(null);
   };
 
   // Render bintang rating
@@ -462,11 +479,23 @@ export default function RuanganPage() {
                           <div
                             className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black flex items-center"
                             onClick={() => {
-                              // Handle edit action
-                              setSelectedRoomId(null);
+                              handleEditRoom(room);
                             }}
                           >
-                            <Pencil className="h-4 w-4 mr-2" />
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="mr-2"
+                            >
+                              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                              <path d="m15 5 4 4" />
+                            </svg>
                             Edit
                           </div>
                           <div
@@ -542,10 +571,22 @@ export default function RuanganPage() {
                   <button
                     className="p-1.5 rounded-full hover:bg-gray-100"
                     onClick={() => {
-                      // Handle edit action
+                      handleEditRoom(room);
                     }}
                   >
-                    <Pencil className="h-5 w-5" />
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                      <path d="m15 5 4 4" />
+                    </svg>
                   </button>
                   <button
                     className="p-1.5 rounded-full hover:bg-gray-100"
@@ -595,16 +636,28 @@ export default function RuanganPage() {
                 "Whiteboard",
               ],
             }}
-            onUpdateRoom={() => {
-              /* Implementasi update room */
+            onUpdateRoom={handleUpdateRoom}
+          />
+
+          <EditRoomPopup
+            room={{
+              ...selectedRoom,
+              facilities: selectedRoom.facilities || [
+                "Proyektor",
+                "AC",
+                "Whiteboard",
+              ],
             }}
+            onClose={() => setIsEditPopupOpen(false)}
+            onSave={handleUpdateRoom}
+            isOpen={isEditPopupOpen}
           />
         </>
       )}
 
       {/* Delete Confirmation Popup */}
       {showDeleteConfirm && roomToDelete && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <h3 className="text-lg font-medium mb-4 text-black">
               Konfirmasi Hapus

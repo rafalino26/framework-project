@@ -55,7 +55,7 @@ type ListDetailPopupProps = {
     comments?: Comment[];
     reservations?: Reservation[];
   };
-  onUpdateRoom: (updatedRoom: Room) => void;
+  onUpdateRoom?: (updatedRoom: Room) => void;
 };
 
 export default function ListDetailPopup({
@@ -130,7 +130,9 @@ export default function ListDetailPopup({
 
   // Handle room edit
   const handleRoomEdit = (updatedRoom: Room) => {
-    onUpdateRoom(updatedRoom);
+    if (onUpdateRoom) {
+      onUpdateRoom(updatedRoom);
+    }
     setIsEditRoomOpen(false);
   };
 
@@ -143,7 +145,9 @@ export default function ListDetailPopup({
       ...room,
       status: newStatus,
     };
-    onUpdateRoom(updatedRoom);
+    if (onUpdateRoom) {
+      onUpdateRoom(updatedRoom);
+    }
     setIsUpdateStatusOpen(false);
   };
 
@@ -179,7 +183,7 @@ export default function ListDetailPopup({
         </div>
 
         {/* Tabs */}
-        <div className="flex bg-gray-100 p-1 text-sm rounded-md mb-6">
+        <div className="flex bg-gray-100 p-1 rounded-md mb-6">
           <button
             className={`flex-1 py-3 px-4 text-center rounded-lg ${
               activeTab === "informasi"
@@ -513,6 +517,7 @@ export default function ListDetailPopup({
       {/* Edit Room Popup */}
       {isEditRoomOpen && (
         <EditRoomPopup
+          isOpen={isEditRoomOpen}
           room={room}
           onClose={() => setIsEditRoomOpen(false)}
           onSave={handleRoomEdit}
