@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { Search, Filter, Clock, ChevronDown } from "lucide-react";
 import AllTable from "../component/AllTable";
@@ -41,10 +42,10 @@ const getCurrentTimestamp = () => {
 };
 
 const mockData: Reservation[] = [
-  // Data dummy 15 item (5 untuk masing-masing status)
+  // Menunggu
   {
-    id: "RES-001",
-    room: "R-101",
+    id: "RES-0001",
+    room: "JTE-01",
     user: "Siti Rahayu",
     purpose: "Seminar Tugas Akhir",
     date: "2023-06-20",
@@ -53,27 +54,61 @@ const mockData: Reservation[] = [
     timestamp: "2023-06-15 10:30:45",
   },
   {
-    id: "RES-002",
-    room: "R-102",
+    id: "RES-0002",
+    room: "JTE-02",
     user: "Ahmad Wijaya",
     purpose: "Rapat Proyek",
     date: "2023-06-21",
     time: "09:00 - 11:00",
-    status: "Disetujui",
+    status: "Menunggu",
     timestamp: "2023-06-14 14:22:10",
   },
+
+  // Disetujui
   {
-    id: "RES-003",
-    room: "R-103",
-    user: "Maya Putri",
-    purpose: "Kuliah Pengganti",
-    date: "2023-06-22",
-    time: "15:30 - 17:30",
-    status: "Ditolak",
-    timestamp: "2023-06-13 09:15:33",
-    rejectionReason: "Ruangan tidak tersedia",
+    id: "RES-0006",
+    room: "JTE-01",
+    user: "Andi Pratama",
+    purpose: "Ujian Akhir Semester",
+    date: "2023-06-25",
+    time: "08:00 - 10:00",
+    status: "Disetujui",
+    timestamp: "2023-06-10 09:20:33",
   },
-  // Tambahkan 12 data dummy lainnya...
+  {
+    id: "RES-0007",
+    room: "JTE-02",
+    user: "Rina Wati",
+    purpose: "Presentasi Penelitian",
+    date: "2023-06-26",
+    time: "13:30 - 15:30",
+    status: "Disetujui",
+    timestamp: "2023-06-09 14:15:27",
+  },
+
+  // Ditolak
+  {
+    id: "RES-0011",
+    room: "JTE-01",
+    user: "Indra Permana",
+    purpose: "Kuliah Tamu",
+    date: "2023-06-30",
+    time: "09:00 - 11:00",
+    status: "Ditolak",
+    timestamp: "2023-06-05 15:40:22",
+    rejectionReason: "Ruangan sudah direservasi untuk kegiatan lain",
+  },
+  {
+    id: "RES-0012",
+    room: "JTE-02",
+    user: "Joko Widodo",
+    purpose: "Diskusi Tugas Akhir",
+    date: "2023-07-01",
+    time: "13:00 - 15:00",
+    status: "Ditolak",
+    timestamp: "2023-06-04 09:35:18",
+    rejectionReason: "Jadwal bertabrakan dengan kegiatan fakultas",
+  },
 ];
 
 export default function ReservasiContent() {
@@ -180,6 +215,39 @@ export default function ReservasiContent() {
     alert("Reservasi berhasil diajukan dan sedang menunggu persetujuan.");
   };
 
+  // Handle approve reservation
+  const handleApproveReservation = (id: string) => {
+    setReservations((prevReservations) =>
+      prevReservations.map((reservation) =>
+        reservation.id === id
+          ? {
+              ...reservation,
+              status: "Disetujui",
+              timestamp: getCurrentTimestamp(),
+            }
+          : reservation
+      )
+    );
+    alert(`Reservasi ${id} telah disetujui.`);
+  };
+
+  // Handle reject reservation
+  const handleRejectReservation = (id: string, reason: string) => {
+    setReservations((prevReservations) =>
+      prevReservations.map((reservation) =>
+        reservation.id === id
+          ? {
+              ...reservation,
+              status: "Ditolak",
+              rejectionReason: reason,
+              timestamp: getCurrentTimestamp(),
+            }
+          : reservation
+      )
+    );
+    alert(`Reservasi ${id} telah ditolak.`);
+  };
+
   // Save reservations to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("reservations", JSON.stringify(reservations));
@@ -194,7 +262,7 @@ export default function ReservasiContent() {
   }, []);
 
   return (
-    <div className="container mx-auto py-8 px-4 bg-white text-black">
+    <div className="container mx-auto bg-white text-black">
       {/* Header */}
       <div className="mb-6">
         <p className="text-gray-600 font-normal">
@@ -287,8 +355,20 @@ export default function ReservasiContent() {
         />
       )}
       {/* Render Table */}
-      {viewMode === "all" && <AllTable data={filteredData} />}
-      {viewMode === "waiting" && <WaitingTable data={filteredData} />}
+      {viewMode === "all" && (
+        <AllTable
+          data={filteredData}
+          onApprove={handleApproveReservation}
+          onReject={handleRejectReservation}
+        />
+      )}
+      {viewMode === "waiting" && (
+        <WaitingTable
+          data={filteredData}
+          onApprove={handleApproveReservation}
+          onReject={handleRejectReservation}
+        />
+      )}
       {viewMode === "accepted" && <AcceptedTable data={filteredData} />}
       {viewMode === "refused" && <RefusedTable data={filteredData} />}
     </div>

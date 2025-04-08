@@ -13,6 +13,7 @@ type Reservation = {
   status: "Menunggu" | "Disetujui" | "Ditolak";
   timestamp: string;
   rejectionReason?: string;
+  notes?: string;
 };
 
 interface AcceptedTableProps {
@@ -29,7 +30,7 @@ const DetailModal = ({
   if (!reservation) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg w-full max-w-2xl border border-gray-100 shadow-lg">
         <div className="flex justify-between items-center p-4 border-b border-gray-100">
           <h2 className="text-xl font-semibold">Detail Reservasi</h2>
@@ -57,19 +58,24 @@ const DetailModal = ({
                 <p>{reservation.purpose}</p>
               </div>
               <div>
-                <p className="text-gray-600 font-medium">Tanggal</p>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  {reservation.date}
+                <p className="text-gray-600 font-medium">Tanggal & Waktu</p>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    {reservation.date}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-gray-400" />
+                    {reservation.time}
+                  </div>
                 </div>
               </div>
-              <div>
-                <p className="text-gray-600 font-medium">Waktu</p>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  {reservation.time}
+              {reservation.notes && (
+                <div className="col-span-2">
+                  <p className="text-gray-600 font-medium">Catatan</p>
+                  <p>{reservation.notes}</p>
                 </div>
-              </div>
+              )}
               <div className="col-span-2">
                 <p className="text-gray-600 font-medium">Disetujui Pada</p>
                 <p>{reservation.timestamp}</p>
@@ -115,10 +121,7 @@ export default function AcceptedTable({ data = [] }: AcceptedTableProps) {
                 Tujuan
               </th>
               <th className="p-4 text-left text-sm font-medium text-gray-700">
-                Tanggal
-              </th>
-              <th className="p-4 text-left text-sm font-medium text-gray-700">
-                Waktu
+                Tanggal & Waktu
               </th>
               <th className="p-4 text-left text-sm font-medium text-gray-700">
                 Disetujui Pada
@@ -139,15 +142,15 @@ export default function AcceptedTable({ data = [] }: AcceptedTableProps) {
                 <td className="p-4">{reservation.user}</td>
                 <td className="p-4">{reservation.purpose}</td>
                 <td className="p-4">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-gray-400" />
-                    {reservation.date}
-                  </div>
-                </td>
-                <td className="p-4">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-gray-400" />
-                    {reservation.time}
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-gray-400" />
+                      {reservation.date}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-gray-400" />
+                      {reservation.time}
+                    </div>
                   </div>
                 </td>
                 <td className="p-4 text-gray-500">{reservation.timestamp}</td>
@@ -155,6 +158,7 @@ export default function AcceptedTable({ data = [] }: AcceptedTableProps) {
                   <button
                     onClick={() => setSelectedReservation(reservation)}
                     className="text-gray-400 hover:text-gray-800"
+                    title="Lihat Detail"
                   >
                     <Eye className="w-5 h-5" />
                   </button>
@@ -191,16 +195,13 @@ export default function AcceptedTable({ data = [] }: AcceptedTableProps) {
                 <p className="text-gray-600">{reservation.purpose}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500">Tanggal</p>
+              <div>
+                <p className="text-sm text-gray-500">Tanggal & Waktu</p>
+                <div className="flex flex-col">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-gray-400" />
                     <span>{reservation.date}</span>
                   </div>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Waktu</p>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-gray-400" />
                     <span>{reservation.time}</span>

@@ -35,6 +35,19 @@ type Notification = {
   type: "success" | "error" | "info";
 };
 
+type Reservation = {
+  id: string;
+  room: string;
+  user: string;
+  purpose: string;
+  date: string;
+  time: string;
+  status: "Menunggu" | "Disetujui" | "Ditolak";
+  timestamp: string;
+  rejectionReason?: string;
+  notes?: string;
+};
+
 // Data ruangan contoh
 const roomsData: Room[] = [
   {
@@ -88,6 +101,26 @@ const roomsData: Room[] = [
   },
 ];
 
+// Generate a unique ID for new reservations
+const generateId = () => {
+  return `RES-${Math.floor(Math.random() * 10000)
+    .toString()
+    .padStart(4, "0")}`;
+};
+
+// Format current timestamp
+const getCurrentTimestamp = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const seconds = String(now.getSeconds()).padStart(2, "0");
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+};
+
 export default function RuanganPage() {
   const [rooms, setRooms] = useState<Room[]>(roomsData);
   const [searchQuery, setSearchQuery] = useState("");
@@ -103,6 +136,7 @@ export default function RuanganPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
 
   const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
@@ -122,6 +156,19 @@ export default function RuanganPage() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [selectedRoomId]);
+
+  // Load reservations from localStorage on component mount
+  useEffect(() => {
+    const savedReservations = localStorage.getItem("reservations");
+    if (savedReservations) {
+      setReservations(JSON.parse(savedReservations));
+    }
+  }, []);
+
+  // Save reservations to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("reservations", JSON.stringify(reservations));
+  }, [reservations]);
 
   // Simple notification system
   const showNotification = (
@@ -188,6 +235,74 @@ export default function RuanganPage() {
     setIsListDetailPopupOpen(false);
     setIsDetailPopupOpen(false);
     setSelectedRoomId(null);
+  };
+
+  // Handle adding a new reservation
+  const handleAddReservation = (reservationData: {
+    room: string;
+    purpose: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    notes?: string;
+  }) => {
+    // Create a new reservation object
+    const newReservation: Reservation = {
+      id: generateId(),
+      room: reservationData.room,
+      user: "Indra Kusuma", // In a real app, this would come from authentication
+      purpose: reservationData.purpose,
+      date: reservationData.date,
+      time: `${reservationData.startTime} - ${reservationData.endTime}`,
+      status: "Menunggu", // New reservations always start with "Menunggu" status
+      timestamp: getCurrentTimestamp(),
+      notes: reservationData.notes,
+    };
+
+    // Add the new reservation to the state
+    setReservations((prevReservations) => [
+      newReservation,
+      ...prevReservations,
+    ]);
+
+    // Show a success notification
+    showNotification(
+      `Reservasi untuk ruangan ${reservationData.room} berhasil diajukan`,
+      "success"
+    );
+  };
+
+  // Handle approving a reservation
+  const handleApproveReservation = (id: string) => {
+    setReservations((prevReservations) =>
+      prevReservations.map((reservation) =>
+        reservation.id === id
+          ? {
+              ...reservation,
+              status: "Disetujui",
+              timestamp: getCurrentTimestamp(),
+            }
+          : reservation
+      )
+    );
+    showNotification(`Reservasi berhasil disetujui`, "success");
+  };
+
+  // Handle rejecting a reservation
+  const handleRejectReservation = (id: string, reason: string) => {
+    setReservations((prevReservations) =>
+      prevReservations.map((reservation) =>
+        reservation.id === id
+          ? {
+              ...reservation,
+              status: "Ditolak",
+              rejectionReason: reason,
+              timestamp: getCurrentTimestamp(),
+            }
+          : reservation
+      )
+    );
+    showNotification(`Reservasi berhasil ditolak`, "info");
   };
 
   // Render bintang rating
@@ -637,6 +752,10 @@ export default function RuanganPage() {
               ],
             }}
             onUpdateRoom={handleUpdateRoom}
+            onAddReservation={handleAddReservation}
+            onApproveReservation={handleApproveReservation}
+            onRejectReservation={handleRejectReservation}
+            reservations={reservations}
           />
 
           <EditRoomPopup

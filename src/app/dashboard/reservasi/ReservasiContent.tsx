@@ -194,10 +194,9 @@ export default function ReservasiContent() {
   }, []);
 
   return (
-    <div className="container mx-auto py-8 px-4 bg-white text-black">
+    <div className="container mx-auto bg-white text-black">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Reservasi Ruangan</h1>
         <p className="text-gray-600 font-normal">
           Kelola dan lihat status reservasi ruangan.
         </p>
