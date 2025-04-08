@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, Star, MessageSquare, ThumbsUp, ThumbsDown } from "lucide-react";
+import CommentPopup from "./CommentPopup";
 
 type Comment = {
   id: number;
@@ -28,14 +29,20 @@ type DetailRoomPopupProps = {
   isOpen: boolean;
   onClose: () => void;
   room: RoomDetails;
+  onAddComment?: (
+    roomId: string,
+    comment: { text: string; rating: number }
+  ) => void;
 };
 
 export default function DetailRoomPopup({
   isOpen,
   onClose,
   room,
+  onAddComment,
 }: DetailRoomPopupProps) {
-  const [comments] = useState<Comment[]>([
+  const [isCommentPopupOpen, setIsCommentPopupOpen] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([
     {
       id: 1,
       user: "John Doe",
@@ -69,6 +76,29 @@ export default function DetailRoomPopup({
         ))}
       </div>
     );
+  };
+
+  const handleAddComment = (commentData: { text: string; rating: number }) => {
+    // Add to local state
+    const newComment: Comment = {
+      id: comments.length + 1,
+      user: "Anda",
+      rating: commentData.rating,
+      comment: commentData.text,
+      likes: 0,
+      dislikes: 0,
+      timestamp: "Baru saja",
+    };
+
+    setComments([newComment, ...comments]);
+
+    // Call the parent handler if provided
+    if (onAddComment) {
+      onAddComment(room.id, commentData);
+    }
+
+    // Close the popup
+    setIsCommentPopupOpen(false);
   };
 
   if (!isOpen) return null;
@@ -150,7 +180,10 @@ export default function DetailRoomPopup({
           <div className="flex flex-col">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-4">
               <h3 className="text-lg font-semibold">Komentar</h3>
-              <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-md text-black hover:bg-gray-50 whitespace-nowrap">
+              <button
+                className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-md text-black hover:bg-gray-50 whitespace-nowrap"
+                onClick={() => setIsCommentPopupOpen(true)}
+              >
                 <MessageSquare className="h-4 w-4" />
                 Tambah Komentar
               </button>
@@ -192,6 +225,15 @@ export default function DetailRoomPopup({
           </div>
         </div>
       </div>
+
+      {/* Comment Popup */}
+      {isCommentPopupOpen && (
+        <CommentPopup
+          roomId={room.id}
+          onClose={() => setIsCommentPopupOpen(false)}
+          onSubmit={handleAddComment}
+        />
+      )}
     </div>
   );
 }

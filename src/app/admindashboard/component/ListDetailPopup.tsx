@@ -12,10 +12,15 @@ import {
   ThumbsUp,
   ThumbsDown,
   Trash2,
+  Calendar,
+  Eye,
+  Check,
+  MessageSquare,
 } from "lucide-react";
 import NewReservationPopup from "./NewReservationPopup";
 import EditRoomPopup from "./EditRoomPopup";
 import UpdateStatusPopup from "./UpdateStatusPopup";
+import CommentPopup from "./CommentPopup";
 
 type Room = {
   id: string;
@@ -40,10 +45,15 @@ type Comment = {
 
 type Reservation = {
   id: string;
+  room: string;
   user: string;
   purpose: string;
-  dateTime: string;
+  date: string;
+  time: string;
   status: "Menunggu" | "Disetujui" | "Ditolak";
+  timestamp: string;
+  rejectionReason?: string;
+  notes?: string;
 };
 
 type ListDetailPopupProps = {
@@ -56,6 +66,22 @@ type ListDetailPopupProps = {
     reservations?: Reservation[];
   };
   onUpdateRoom?: (updatedRoom: Room) => void;
+  onAddReservation?: (reservationData: {
+    room: string;
+    purpose: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    notes?: string;
+  }) => void;
+  onApproveReservation?: (id: string) => void;
+  onRejectReservation?: (id: string, reason: string) => void;
+  onAddComment?: (
+    roomId: string,
+    comment: { text: string; rating: number }
+  ) => void;
+  reservations?: Reservation[];
+  comments?: Comment[];
 };
 
 export default function ListDetailPopup({
@@ -63,6 +89,12 @@ export default function ListDetailPopup({
   onClose,
   room,
   onUpdateRoom,
+  onAddReservation,
+  onApproveReservation,
+  onRejectReservation,
+  onAddComment,
+  reservations = [],
+  comments: externalComments = [],
 }: ListDetailPopupProps) {
   const [activeTab, setActiveTab] = useState<
     "informasi" | "komentar" | "reservasi"
@@ -70,6 +102,12 @@ export default function ListDetailPopup({
   const [isNewReservationOpen, setIsNewReservationOpen] = useState(false);
   const [isEditRoomOpen, setIsEditRoomOpen] = useState(false);
   const [isUpdateStatusOpen, setIsUpdateStatusOpen] = useState(false);
+  const [isCommentPopupOpen, setIsCommentPopupOpen] = useState(false);
+  const [selectedReservation, setSelectedReservation] =
+    useState<Reservation | null>(null);
+  const [rejectReservation, setRejectReservation] =
+    useState<Reservation | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   if (!isOpen) return null;
 
@@ -80,38 +118,35 @@ export default function ListDetailPopup({
     { day: "Jumat", time: "10:00 - 12:30" },
   ];
 
-  // Default comments if not provided
-  const comments = room.comments || [
-    {
-      id: "1",
-      user: "Budi Santoso",
-      text: "Ruangan sangat nyaman dan bersih. AC berfungsi dengan baik.",
-      rating: 5,
-      likes: 12,
-      dislikes: 2,
-      date: "2 jam yang lalu",
-    },
-    {
-      id: "2",
-      user: "Darmawan",
-      text: "AC terlalu dingin dan tidak bisa diatur.",
-      rating: 4,
-      likes: 7,
-      dislikes: 2,
-      date: "3 hari yang lalu",
-    },
-  ];
+  // Use external comments if provided, otherwise use default
+  const comments =
+    externalComments.length > 0
+      ? externalComments
+      : room.comments || [
+          {
+            id: "1",
+            user: "Budi Santoso",
+            text: "Ruangan sangat nyaman dan bersih. AC berfungsi dengan baik.",
+            rating: 5,
+            likes: 12,
+            dislikes: 2,
+            date: "2 jam yang lalu",
+          },
+          {
+            id: "2",
+            user: "Darmawan",
+            text: "AC terlalu dingin dan tidak bisa diatur.",
+            rating: 4,
+            likes: 7,
+            dislikes: 2,
+            date: "3 hari yang lalu",
+          },
+        ];
 
-  // Default reservations if not provided
-  const reservations = room.reservations || [
-    {
-      id: "1",
-      user: "Siti Rahayu",
-      purpose: "Seminar Tugas Akhir",
-      dateTime: "2023-06-20, 13:00 - 15:00",
-      status: "Menunggu",
-    },
-  ];
+  // Filter reservations for this room
+  const roomReservations = reservations.filter(
+    (reservation) => reservation.room === room.id
+  );
 
   // Handle new reservation submission
   const handleNewReservation = (reservationData: {
@@ -122,9 +157,9 @@ export default function ListDetailPopup({
     endTime: string;
     notes?: string;
   }) => {
-    console.log("New reservation:", reservationData);
-    // Here you would typically send this data to your backend
-    // For now, we'll just close the popup
+    if (onAddReservation) {
+      onAddReservation(reservationData);
+    }
     setIsNewReservationOpen(false);
   };
 
@@ -151,6 +186,29 @@ export default function ListDetailPopup({
     setIsUpdateStatusOpen(false);
   };
 
+  // Handle approve reservation
+  const handleApproveReservation = (id: string) => {
+    if (onApproveReservation) {
+      onApproveReservation(id);
+    }
+  };
+
+  // Handle reject reservation
+  const handleRejectReservation = () => {
+    if (rejectReservation && onRejectReservation && rejectReason.trim()) {
+      onRejectReservation(rejectReservation.id, rejectReason);
+      setRejectReservation(null);
+      setRejectReason("");
+    }
+  };
+
+  // Handle add comment
+  const handleAddComment = (comment: { text: string; rating: number }) => {
+    if (onAddComment) {
+      onAddComment(room.id, comment);
+    }
+  };
+
   // Render stars for rating
   const renderStars = (rating: number) => {
     return (
@@ -167,9 +225,23 @@ export default function ListDetailPopup({
     );
   };
 
+  // Get status style
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case "Menunggu":
+        return "bg-gray-200 text-black";
+      case "Disetujui":
+        return "bg-white text-black border border-gray-200";
+      case "Ditolak":
+        return "bg-red-600 text-white";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto m-4">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-black">
             Detail Ruangan {room.id}
@@ -183,7 +255,7 @@ export default function ListDetailPopup({
         </div>
 
         {/* Tabs */}
-        <div className="flex bg-gray-100 p-1 rounded-md mb-6">
+        <div className="flex bg-gray-100 p-1 text-sm rounded-lg mb-6">
           <button
             className={`flex-1 py-3 px-4 text-center rounded-lg ${
               activeTab === "informasi"
@@ -365,7 +437,11 @@ export default function ListDetailPopup({
               <h3 className="text-lg font-medium text-black">
                 Komentar & Rating
               </h3>
-              <button className="px-4 py-2 border border-gray-200 rounded-md text-black hover:bg-gray-50">
+              <button
+                className="px-4 py-2 border border-gray-200 rounded-md text-black hover:bg-gray-50 flex items-center gap-2"
+                onClick={() => setIsCommentPopupOpen(true)}
+              >
+                <MessageSquare className="h-4 w-4" />
                 Tambah Komentar
               </button>
             </div>
@@ -459,45 +535,86 @@ export default function ListDetailPopup({
                   </tr>
                 </thead>
                 <tbody>
-                  {reservations.map((reservation) => (
-                    <tr
-                      key={reservation.id}
-                      className="border-b border-gray-200"
-                    >
-                      <td className="py-3 px-4 text-black">
-                        {reservation.user}
-                      </td>
-                      <td className="py-3 px-4 text-black">
-                        {reservation.purpose}
-                      </td>
-                      <td className="py-3 px-4 text-black">
-                        {reservation.dateTime}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                            reservation.status === "Menunggu"
-                              ? "bg-gray-100 text-gray-800"
-                              : reservation.status === "Disetujui"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {reservation.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex space-x-2">
-                          <button className="px-3 py-1 bg-gray-100 text-black rounded-md hover:bg-gray-200">
-                            Setujui
-                          </button>
-                          <button className="px-3 py-1 text-red-500 rounded-md hover:bg-red-50">
-                            Tolak
-                          </button>
-                        </div>
+                  {roomReservations.length > 0 ? (
+                    roomReservations.map((reservation) => (
+                      <tr
+                        key={reservation.id}
+                        className="border-b border-gray-200"
+                      >
+                        <td className="py-3 px-4 text-black">
+                          {reservation.user}
+                        </td>
+                        <td className="py-3 px-4 text-black">
+                          {reservation.purpose}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4 text-gray-400" />
+                              {reservation.date}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-gray-400" />
+                              {reservation.time}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusStyle(
+                              reservation.status
+                            )}`}
+                          >
+                            {reservation.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex space-x-2">
+                            <button
+                              className="text-gray-400 hover:text-gray-800"
+                              onClick={() =>
+                                setSelectedReservation(reservation)
+                              }
+                              title="Lihat Detail"
+                            >
+                              <Eye className="w-5 h-5" />
+                            </button>
+                            {reservation.status === "Menunggu" && (
+                              <>
+                                <button
+                                  className="text-green-500 hover:text-green-700"
+                                  onClick={() =>
+                                    handleApproveReservation(reservation.id)
+                                  }
+                                  title="Setujui"
+                                >
+                                  <Check className="w-5 h-5" />
+                                </button>
+                                <button
+                                  className="text-red-500 hover:text-red-700"
+                                  onClick={() =>
+                                    setRejectReservation(reservation)
+                                  }
+                                  title="Tolak"
+                                >
+                                  <X className="w-5 h-5" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="py-4 px-4 text-center text-gray-500"
+                      >
+                        Belum ada reservasi untuk ruangan ini
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -532,6 +649,153 @@ export default function ListDetailPopup({
           onClose={() => setIsUpdateStatusOpen(false)}
           onUpdate={handleStatusUpdate}
         />
+      )}
+
+      {/* Comment Popup */}
+      {isCommentPopupOpen && (
+        <CommentPopup
+          roomId={room.id}
+          onClose={() => setIsCommentPopupOpen(false)}
+          onSubmit={handleAddComment}
+        />
+      )}
+
+      {/* Reservation Detail Modal */}
+      {selectedReservation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white rounded-lg w-full max-w-2xl border border-gray-100 shadow-lg">
+            <div className="flex justify-between items-center p-4 border-b border-gray-100">
+              <h2 className="text-xl font-semibold">Detail Reservasi</h2>
+              <button
+                onClick={() => setSelectedReservation(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6 grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <h3 className="font-semibold text-lg">
+                  {selectedReservation.room}
+                </h3>
+              </div>
+
+              <div className="col-span-2 border-t border-gray-100 pt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-gray-600 font-medium">Pengguna</p>
+                    <p>{selectedReservation.user}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600 font-medium">Tujuan</p>
+                    <p>{selectedReservation.purpose}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600 font-medium">Tanggal & Waktu</p>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-gray-400" />
+                        {selectedReservation.date}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-gray-400" />
+                        {selectedReservation.time}
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-gray-600 font-medium">Status</p>
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm ${getStatusStyle(
+                        selectedReservation.status
+                      )}`}
+                    >
+                      {selectedReservation.status}
+                    </span>
+                  </div>
+                  {selectedReservation.status === "Ditolak" &&
+                    selectedReservation.rejectionReason && (
+                      <div className="col-span-2">
+                        <p className="text-gray-600 font-medium">
+                          Alasan Penolakan
+                        </p>
+                        <p className="text-red-600">
+                          {selectedReservation.rejectionReason}
+                        </p>
+                      </div>
+                    )}
+                  {selectedReservation.notes && (
+                    <div className="col-span-2">
+                      <p className="text-gray-600 font-medium">Catatan</p>
+                      <p>{selectedReservation.notes}</p>
+                    </div>
+                  )}
+                  <div className="col-span-2">
+                    <p className="text-gray-600 font-medium">Diajukan Pada</p>
+                    <p>{selectedReservation.timestamp}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Reservation Modal */}
+      {rejectReservation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white rounded-lg w-full max-w-md border border-gray-100 shadow-lg">
+            <div className="flex justify-between items-center p-4 border-b border-gray-100">
+              <h2 className="text-xl font-semibold">Tolak Reservasi</h2>
+              <button
+                onClick={() => setRejectReservation(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <p className="mb-4">
+                Anda akan menolak reservasi untuk ruangan{" "}
+                <span className="font-semibold">{rejectReservation.room}</span>{" "}
+                oleh{" "}
+                <span className="font-semibold">{rejectReservation.user}</span>.
+              </p>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">
+                  Alasan Penolakan
+                </label>
+                <textarea
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  rows={4}
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Berikan alasan penolakan reservasi ini..."
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRejectReservation(null)}
+                  className="px-4 py-2 border border-gray-300 rounded-md"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRejectReservation}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md"
+                  disabled={!rejectReason.trim()}
+                >
+                  Tolak Reservasi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

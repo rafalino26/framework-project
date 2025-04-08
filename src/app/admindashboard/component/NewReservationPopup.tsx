@@ -64,7 +64,7 @@ export default function NewReservationPopup({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-2 sm:p-4 z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-2 sm:p-4 z-[60]">
       <div className="bg-white rounded-lg w-full max-w-md mx-2 min-w-[300px]">
         {/* Header */}
         <div className="p-4 sm:p-6">
