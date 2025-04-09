@@ -263,7 +263,7 @@ const filteredUsers = users.filter((user) => {
         <th className="py-3 px-4 text-left font-medium text-gray-500">Nama</th>
         <th className="py-3 px-4 text-left font-medium text-gray-500">Username</th>
         <th className="py-3 px-4 text-left font-medium text-gray-500">Email</th>
-        <th className="py-3 px-4 text-left font-medium text-gray-500">NIM</th>
+        <th className="py-3 px-4 text-left font-medium text-gray-500">NIM/NIDN</th>
         <th className="py-3 px-4 text-left font-medium text-gray-500">Role</th>
         <th className="py-3 px-4 text-left font-medium text-gray-500">Status</th>
         <th className="py-3 px-4 text-left font-medium text-gray-500">Login Terakhir</th>
