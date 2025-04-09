@@ -4,10 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 
 export default function RegisterPage() {
-  return (  
+  return (
     <div className="flex min-h-screen bg-[#EDF0F2] items-center justify-center p-4 font-sans">
       <div className="bg-white w-11/12 md:w-5/6 lg:w-3/4 h-auto md:h-4/5 flex flex-col md:flex-row rounded-xl shadow-lg overflow-hidden">
-        
         {/* Image Container */}
         <div className="w-full md:w-2/5 bg-white flex items-center justify-center p-4">
           <Image
@@ -37,21 +36,31 @@ export default function RegisterPage() {
 
           {/* Form (hanya tampilan, tidak berfungsi) */}
           <form>
-            {/* First Name & Last Name */}
+            {/* Full Name */}
+            <div>
+              <label className="text-sm text-black">Full Name</label>
+              <input
+                type="text"
+                placeholder="Enter your full name"
+                className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200"
+              />
+            </div>
+
+            {/* Username & NIM/NIDN */}
             <div className="flex space-x-4">
               <div className="w-1/2">
-                <label className="text-sm text-black">First Name</label>
+                <label className="text-sm text-black">Username</label>
                 <input
                   type="text"
-                  placeholder="Enter your name"
+                  placeholder="Create a username"
                   className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200"
                 />
               </div>
               <div className="w-1/2">
-                <label className="text-sm text-black">Last Name</label>
+                <label className="text-sm text-black">NIM/NIDN</label>
                 <input
                   type="text"
-                  placeholder="Enter your last name"
+                  placeholder="Enter your NIM/NIDN"
                   className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200"
                 />
               </div>
@@ -107,7 +116,10 @@ export default function RegisterPage() {
           {/* Already have an account? */}
           <p className="text-sm mt-4 text-black">
             Already have an account?{" "}
-            <Link href="/login" className="text-black font-medium hover:underline">
+            <Link
+              href="/login"
+              className="text-black font-medium hover:underline"
+            >
               Log in
             </Link>
           </p>
