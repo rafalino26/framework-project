@@ -10,6 +10,7 @@ const pageTitles: Record<string, string> = {
   "/superadmindashboard/schedule": "Jadwal (Super Admin)",
   "/superadmindashboard/reservasi": "Reservasi (Super Admin)",
   "/superadmindashboard/editor-profile": "Edit Profil (Super Admin)",
+  "/superadmindashboard/pengguna": "Manajemen Pengguna (Super Admin)"
 };
 
 export default function DashboardLayout({
