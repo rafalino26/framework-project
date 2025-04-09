@@ -11,6 +11,7 @@ const menuItems = [
   { label: "Ruangan", path: "/superadmindashboard/room" },
   { label: "Jadwal", path: "/superadmindashboard/schedule" },
   { label: "Reservasi", path: "/superadmindashboard/reservasi" },
+  { label: "Pengguna", path: "/superadmindashboard/pengguna" },
 ];
 
 export default function Navbar() {

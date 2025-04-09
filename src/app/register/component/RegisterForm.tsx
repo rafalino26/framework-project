@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function RegisterPage() {
   return (  
-    <div className="flex min-h-screen bg-[#EDF0F2] items-center justify-center p-4 font-[Poppins]">
+    <div className="flex min-h-screen bg-[#EDF0F2] items-center justify-center p-4 font-sans">
       <div className="bg-white w-11/12 md:w-5/6 lg:w-3/4 h-auto md:h-4/5 flex flex-col md:flex-row rounded-xl shadow-lg overflow-hidden">
         
         {/* Image Container */}
