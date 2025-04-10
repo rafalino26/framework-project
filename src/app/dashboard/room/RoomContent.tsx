@@ -326,8 +326,7 @@ export default function RuanganPage() {
                         }}
                         className="px-3 py-1 text-xs border border-gray-200 rounded-md hover:bg-gray-50 flex items-center gap-1"
                       >
-                        <Printer className="h-3 w-3" />
-                        Cetak
+                      Jadwal
                       </button>
                     </div>
                   </td>
@@ -392,8 +391,7 @@ export default function RuanganPage() {
                   }}
                   className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-black text-sm font-medium hover:border-gray-300 transition-colors flex items-center justify-center gap-1"
                 >
-                  <Printer className="h-4 w-4" />
-                  Cetak
+                  Jadwal
                 </button>
               </div>
             </div>

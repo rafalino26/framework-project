@@ -12,11 +12,13 @@ import {
   MoreVertical,
   Trash2,
   X,
+  Printer,
 } from "lucide-react";
 import AddRoomPopup from "../component/AddRoomPopup";
 import DetailRoomPopup from "../component/DetailRoomPopup";
 import ListDetailPopup from "../component/ListDetailPopup";
 import EditRoomPopup from "../component/EditRoomPopup";
+import PrintPopup from "../component/PrintPopup";
 
 type Room = {
   id: string;
@@ -137,6 +139,7 @@ export default function RuanganPage() {
   const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [isPrintPopupOpen, setIsPrintPopupOpen] = useState(false);
 
   const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
@@ -673,47 +676,66 @@ export default function RuanganPage() {
               </div>
 
               <div className="mt-4 flex justify-between items-center">
-                <button
-                  onClick={() => {
-                    setSelectedRoom(room);
-                    setIsDetailPopupOpen(true);
-                  }}
-                  className="px-3 py-1.5 border border-gray-200 rounded-md text-black text-sm font-medium hover:border-gray-300 transition-colors"
-                >
-                  Detail
-                </button>
-                <div className="flex gap-2">
-                  <button
-                    className="p-1.5 rounded-full hover:bg-gray-100"
-                    onClick={() => {
-                      handleEditRoom(room);
-                    }}
-                  >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                      <path d="m15 5 4 4" />
-                    </svg>
-                  </button>
-                  <button
-                    className="p-1.5 rounded-full hover:bg-gray-100"
-                    onClick={() => {
-                      setShowDeleteConfirm(true);
-                      setRoomToDelete(room);
-                    }}
-                  >
-                    <Trash2 className="h-5 w-5 text-red-500" />
-                  </button>
-                </div>
-              </div>
+  <div className="flex gap-2">
+    {/* Tombol Detail */}
+    <button
+      onClick={() => {
+        setSelectedRoom(room);
+        setIsDetailPopupOpen(true);
+      }}
+      className="px-3 py-1.5 border border-gray-200 rounded-md text-black text-sm font-medium hover:border-gray-300 transition-colors"
+    >
+      Detail
+    </button>
+
+    {/* Tombol Cetak */}
+    <button
+      onClick={() => {
+        setSelectedRoom(room);
+        setIsPrintPopupOpen(true);
+      }}
+      className="px-3 py-1.5 border border-gray-200 rounded-md text-black text-sm font-medium hover:border-gray-300 transition-colors flex items-center gap-1"
+    >
+      Jadwal
+    </button>
+  </div>
+
+  <div className="flex gap-2">
+    {/* Tombol Edit */}
+    <button
+      className="p-1.5 rounded-full hover:bg-gray-100"
+      onClick={() => {
+        handleEditRoom(room);
+      }}
+    >
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+        <path d="m15 5 4 4" />
+      </svg>
+    </button>
+
+    {/* Tombol Hapus */}
+    <button
+      className="p-1.5 rounded-full hover:bg-gray-100"
+      onClick={() => {
+        setShowDeleteConfirm(true);
+        setRoomToDelete(room);
+      }}
+    >
+      <Trash2 className="h-5 w-5 text-red-500" />
+    </button>
+  </div>
+</div>
+
             </div>
           ))}
         </div>
@@ -739,6 +761,19 @@ export default function RuanganPage() {
               ],
             }}
           />
+
+                    <PrintPopup
+                      isOpen={isPrintPopupOpen}
+                      onClose={() => setIsPrintPopupOpen(false)}
+                      room={{
+                        ...selectedRoom,
+                        facilities: selectedRoom.facilities || [
+                          "Proyektor",
+                          "AC",
+                          "Whiteboard",
+                        ],
+                      }}
+                    />
 
           <ListDetailPopup
             isOpen={isListDetailPopupOpen}

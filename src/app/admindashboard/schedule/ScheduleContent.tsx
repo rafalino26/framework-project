@@ -4,6 +4,7 @@ import { useState } from "react"
 import { FiChevronDown } from "react-icons/fi"
 import { FaBook, FaUser, FaClock, FaMapMarkerAlt, FaCalendarAlt } from "react-icons/fa";
 import AddSchedulePopup from "../component/AddSchedulePopup";
+import PrintButton from "../component/PrintButton";
 
 const initialCourses = [
   { id: "MK001", name: "Algoritma dan Pemrograman", lecturer: "Dr. Budi Santoso", time: "Senin, 08:00 - 10:30", room: "JTE-01", semester: "1", day: "Senin" },
@@ -122,13 +123,19 @@ export default function SchedulePage() {
           </button>
         </div>
 
-        {/* Tombol Tambah Jadwal */}
-        <button
-          className="px-4 py-2 bg-black text-white text-sm rounded-md hover:bg-gray-800 ml-auto"
-          onClick={() => setIsPopupOpen(true)}
-        >
-          + Tambah
-        </button>
+{/* Tombol Cetak dan Tambah Jadwal */} 
+<div className="flex gap-2 ml-auto">
+  {activeTab === "schedule" && selectedCourses.length > 0 && (
+    <PrintButton contentId="printable-content" />
+  )}
+  <button
+    className="px-4 py-2 bg-black text-white text-sm rounded-md hover:bg-gray-800"
+    onClick={() => setIsPopupOpen(true)}
+  >
+    + Tambah
+  </button>
+</div>
+
 
         {/* Popup */}
         <AddSchedulePopup
@@ -179,6 +186,7 @@ export default function SchedulePage() {
           </>
         ) : (
           <>
+          <div id="printable-content">
             <h3 className="text-2xl font-semibold text-center sm:text-left">Jadwal Mata Kuliah</h3>
             <p className="text-gray-500 text-center sm:text-left">Jadwal mata kuliah yang Anda pilih.</p>
   
@@ -227,6 +235,7 @@ export default function SchedulePage() {
                   </div>
                 );
               })}
+            </div>
             </div>
           </>
         )}

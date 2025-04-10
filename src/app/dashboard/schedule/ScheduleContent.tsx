@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { FiChevronDown } from "react-icons/fi"
 import { FaBook, FaUser, FaClock, FaMapMarkerAlt, FaCalendarAlt } from "react-icons/fa";
+import PrintButton from "../component/PrintButton";
 
 const courses = [
   { id: "MK001", name: "Algoritma dan Pemrograman", lecturer: "Dr. Budi Santoso", time: "Senin, 08:00 - 10:30", room: "JTE-01", semester: "1", day: "Senin" },
@@ -93,26 +94,35 @@ export default function SchedulePage() {
         </div>
       </div>
   
-      {/* Tabs */}
-      <div className="flex bg-gray-100 p-1 rounded-lg w-fit mx-auto sm:mx-0">
-        <button
-          className={`px-4 py-2 text-sm rounded-md ${
-            activeTab === "courses" ? "bg-white font-semibold" : "text-gray-500"
-          }`}
-          onClick={() => setActiveTab("courses")}
-        >
-          Pilihan Mata Kuliah
-        </button>
-        <button
-          className={`px-4 py-2 text-sm rounded-md ${
-            activeTab === "schedule" ? "bg-white font-semibold" : "text-gray-500"
-          }`}
-          onClick={() => selectedCourses.length > 0 && setActiveTab("schedule")}
-          disabled={selectedCourses.length === 0}
-        >
-          Jadwal
-        </button>
-      </div>
+     {/* Tabs dan Tombol Cetak */}
+<div className="flex justify-between items-center flex-wrap gap-4">
+  {/* Tabs */}
+  <div className="flex bg-gray-100 p-1 rounded-lg w-fit">
+    <button
+      className={`px-4 py-2 text-sm rounded-md ${
+        activeTab === "courses" ? "bg-white font-semibold" : "text-gray-500"
+      }`}
+      onClick={() => setActiveTab("courses")}
+    >
+      Pilihan Mata Kuliah
+    </button>
+    <button
+      className={`px-4 py-2 text-sm rounded-md ${
+        activeTab === "schedule" ? "bg-white font-semibold" : "text-gray-500"
+      }`}
+      onClick={() => selectedCourses.length > 0 && setActiveTab("schedule")}
+      disabled={selectedCourses.length === 0}
+    >
+      Jadwal
+    </button>
+  </div>
+
+  {/* Tombol Cetak */}
+  {activeTab === "schedule" && selectedCourses.length > 0 && (
+    <PrintButton contentId="printable-content" />
+  )}
+</div>
+
   
       {/* Card Container */}
       <div className="border border-gray-300 rounded-lg p-6 bg-white">
@@ -155,6 +165,7 @@ export default function SchedulePage() {
           </>
         ) : (
           <>
+          <div id="printable-content">
             <h3 className="text-2xl font-semibold text-center sm:text-left">Jadwal Mata Kuliah</h3>
             <p className="text-gray-500 text-center sm:text-left">Jadwal mata kuliah yang Anda pilih.</p>
   
@@ -203,6 +214,7 @@ export default function SchedulePage() {
                   </div>
                 );
               })}
+            </div>
             </div>
           </>
         )}
