@@ -46,7 +46,7 @@ export default function Navbar() {
 
         {/* Nama Aplikasi (Desktop) */}
         <h2 className="hidden md:block text-lg md:text-xl font-semibold text-black px-6 md:px-8">
-          SARA
+          JTEHub
         </h2>
 
         {/* Navbar Desktop */}
@@ -131,7 +131,7 @@ export default function Navbar() {
               alt="User profile"
               className="w-10 h-10 rounded-full border border-gray-400"
             />
-            <h2 className="text-lg font-semibold text-black ml-2">SARA</h2>
+            <h2 className="text-lg font-semibold text-black ml-2">JTEHub</h2>
           </div>
 
           {/* Tombol Close */}
