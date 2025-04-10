@@ -59,7 +59,7 @@ export default function AboutUs() {
           <div className="flex justify-center">
             <div className="w-48 h-48 relative">
               <Image
-                src="/gal.png"
+                src="/unsrat.jpg"
                 width={200}
                 height={200}
                 alt="Logo Universitas"

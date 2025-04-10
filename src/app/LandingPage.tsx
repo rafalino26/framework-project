@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import { MapPin } from "lucide-react";
 import RoomCard from "./components/RoomCard";
 import AboutUs from "./components/AboutUsComps";
 
@@ -21,14 +20,11 @@ export default function Home() {
           <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
           <div className="flex flex-col justify-center space-y-4 md:text-left ml-4 md:ml-12">
               <h1 className="text-3xl text-black font-bold tracking-tighter sm:text-5xl xl:text-6xl">
-              SARA
+              JTEHub
               </h1>
-              <p className="max-w-[600px] text-gray-600 text-muted-foreground md:text-xl">
-              Smart Allocation & Room Access. <br />
               <span className="max-w-[600px] text-gray-600 text-muted-foreground md:text-xl">
                 Kelola ruangan kelas dengan efisien, hindari konflik jadwal, dan dapatkan informasi ketersediaan ruangan secara real-time.
               </span>
-              </p>
               
               <div className="flex gap-4">
               <Link
@@ -48,7 +44,7 @@ export default function Home() {
 
             </div>
             <div className="mx-auto w-full max-w-[500px] aspect-video rounded-xl overflow-hidden shadow-lg">
-              <Image src="/placeholder.svg?height=500&width=800" width={800} height={500} alt="Dashboard preview" />
+              <Image src="/jte.jpg" width={800} height={500} alt="Dashboard preview" />
             </div>
           </div>
         </div>
