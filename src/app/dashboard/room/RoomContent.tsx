@@ -1,19 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Search,
-  Filter,
-  Plus,
-  Book,
-  User,
-  Clock,
-  Star,
-  MoreVertical,
-} from "lucide-react";
-import Link from "next/link";
-import AddRoomPopup from "../component/AddRoomPopup";
+import { Search, Filter, Book, User, Clock, Star, Printer } from "lucide-react";
 import DetailRoomPopup from "../component/DetailRoomPopup";
+import PrintPopup from "../component/PrintPopup";
 
 type Room = {
   id: string;
@@ -66,6 +56,7 @@ const roomsData: Room[] = [
     status: "Pemeliharaan",
     rating: 4.0,
     capacity: 25,
+    facilities: ["Proyektor", "AC"],
   },
   {
     id: "JTE-05",
@@ -80,13 +71,13 @@ const roomsData: Room[] = [
 ];
 
 export default function RuanganPage() {
-  const [rooms, setRooms] = useState<Room[]>(roomsData);
+  const [rooms] = useState<Room[]>(roomsData);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("Semua Status");
   const [view, setView] = useState<"list" | "grid">("list");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isDetailPopupOpen, setIsDetailPopupOpen] = useState(false);
+  const [isPrintPopupOpen, setIsPrintPopupOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
   // Filter ruangan berdasarkan pencarian dan status
@@ -101,21 +92,6 @@ export default function RuanganPage() {
 
     return matchesSearch && matchesStatus;
   });
-
-  const handleAddRoom = (newRoom: Room) => {
-    setRooms((prevRooms) => [
-      ...prevRooms,
-      {
-        ...newRoom,
-        id: `R-${prevRooms.length + 1}`,
-        capacity: Number(newRoom.capacity),
-        rating: 0,
-        course: "-",
-        lecturer: "-",
-        time: "-",
-      },
-    ]);
-  };
 
   // Render bintang rating
   const renderStars = (rating: number) => {
@@ -166,7 +142,7 @@ export default function RuanganPage() {
   };
 
   return (
-    <div className="container mx-auto  bg-white text-black">
+    <div className="container mx-auto bg-white text-black">
       <div className="mb-6">
         <p className="text-gray-600 font-normal">
           Kelola dan lihat informasi ruangan kelas yang tersedia.
@@ -253,7 +229,6 @@ export default function RuanganPage() {
               </div>
             )}
           </div>
-
         </div>
       </div>
 
@@ -301,6 +276,9 @@ export default function RuanganPage() {
                 <th className="py-3 px-4 text-left font-medium text-gray-500">
                   Rating
                 </th>
+                <th className="py-3 px-4 text-left font-medium text-gray-500">
+                  Aksi
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -312,8 +290,12 @@ export default function RuanganPage() {
                   <td className="py-4 px-4 text-black text-sm font-medium">
                     {room.id}
                   </td>
-                  <td className="py-4 px-4 text-black text-sm">{room.course}</td>
-                  <td className="py-4 px-4 text-black text-sm">{room.lecturer}</td>
+                  <td className="py-4 px-4 text-black text-sm">
+                    {room.course}
+                  </td>
+                  <td className="py-4 px-4 text-black text-sm">
+                    {room.lecturer}
+                  </td>
                   <td className="py-4 px-4 text-black text-sm">{room.time}</td>
                   <td className="py-4 px-4">
                     {renderStatusBadge(room.status)}
@@ -324,6 +306,29 @@ export default function RuanganPage() {
                       <span className="ml-1 text-black">
                         {room.rating.toFixed(1)}
                       </span>
+                    </div>
+                  </td>
+                  <td className="py-4 px-4">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setSelectedRoom(room);
+                          setIsDetailPopupOpen(true);
+                        }}
+                        className="px-3 py-1 text-xs border border-gray-200 rounded-md hover:bg-gray-50"
+                      >
+                        Detail
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedRoom(room);
+                          setIsPrintPopupOpen(true);
+                        }}
+                        className="px-3 py-1 text-xs border border-gray-200 rounded-md hover:bg-gray-50 flex items-center gap-1"
+                      >
+                        <Printer className="h-3 w-3" />
+                        Cetak
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -370,37 +375,59 @@ export default function RuanganPage() {
                 </span>
               </div>
 
-              <div className="mt-4 pt-4">
-                {" "}
+              <div className="mt-4 pt-4 flex gap-2">
                 <button
                   onClick={() => {
                     setSelectedRoom(room);
                     setIsDetailPopupOpen(true);
                   }}
-                  className="px-4 py-2 border border-gray-200 rounded-md text-black font-medium w-full hover:border-gray-300 transition-colors"
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-black text-sm font-medium hover:border-gray-300 transition-colors"
                 >
                   Detail
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedRoom(room);
+                    setIsPrintPopupOpen(true);
+                  }}
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-md text-black text-sm font-medium hover:border-gray-300 transition-colors flex items-center justify-center gap-1"
+                >
+                  <Printer className="h-4 w-4" />
+                  Cetak
                 </button>
               </div>
             </div>
           ))}
         </div>
       )}
-      
-      <AddRoomPopup
-        isOpen={isPopupOpen}
-        onClose={() => setIsPopupOpen(false)}
-        onAddRoom={handleAddRoom}
-      />
+
       {selectedRoom && (
-        <DetailRoomPopup
-          isOpen={isDetailPopupOpen}
-          onClose={() => setIsDetailPopupOpen(false)}
-          room={{
-            ...selectedRoom,
-            facilities: ["Proyektor", "AC", "Whiteboard"],
-          }}
-        />
+        <>
+          <DetailRoomPopup
+            isOpen={isDetailPopupOpen}
+            onClose={() => setIsDetailPopupOpen(false)}
+            room={{
+              ...selectedRoom,
+              facilities: selectedRoom.facilities || [
+                "Proyektor",
+                "AC",
+                "Whiteboard",
+              ],
+            }}
+          />
+          <PrintPopup
+            isOpen={isPrintPopupOpen}
+            onClose={() => setIsPrintPopupOpen(false)}
+            room={{
+              ...selectedRoom,
+              facilities: selectedRoom.facilities || [
+                "Proyektor",
+                "AC",
+                "Whiteboard",
+              ],
+            }}
+          />
+        </>
       )}
     </div>
   );
