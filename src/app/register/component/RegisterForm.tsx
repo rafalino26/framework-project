@@ -4,23 +4,47 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { HiEye, HiEyeOff } from "react-icons/hi";
+import { registerUser } from "@/app/services/auth";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const [form, setForm] = useState({
+    fullname: "",
+    username: "",
+    email: "",
+    password: "",
+    nimNidn: "",
+    phoneNumber: "",
+  });
+
 
   const handleTogglePassword = () => {
     setShowPassword(!showPassword);
   };
 
-  const handleSignUp = () => {
-    setIsLoading(true);
-    // Simulasi delay submit (contoh)
-    setTimeout(() => {
-      setIsLoading(false);
-      alert("Registered!"); // Ganti dengan aksi submit asli
-    }, 2000);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
+
+const handleSignUp = async () => {
+  setIsLoading(true);
+  try {
+    const response = await registerUser(form);
+
+    // Tampilkan pesan ke user
+    alert("Silahkan cek email anda untuk verifikasi");
+
+    // Setelah user klik OK di alert, redirect ke login
+    router.push("/login");
+  } catch (err: any) {
+    alert(err.message);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="flex min-h-screen bg-[#EDF0F2] items-center justify-center p-4 font-sans">
@@ -57,7 +81,10 @@ export default function RegisterPage() {
             <div>
               <label className="text-sm text-black">Full Name</label>
               <input
+                name="fullname"
                 type="text"
+                value={form.fullname}
+                onChange={handleChange}
                 placeholder="Enter your full name"
                 className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200"
               />
@@ -68,7 +95,10 @@ export default function RegisterPage() {
               <div className="w-1/2">
                 <label className="text-sm text-black">Username</label>
                 <input
+                  name="username"
                   type="text"
+                  value={form.username}
+                  onChange={handleChange}
                   placeholder="Create a username"
                   className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200"
                 />
@@ -76,7 +106,10 @@ export default function RegisterPage() {
               <div className="w-1/2">
                 <label className="text-sm text-black">NIM/NIDN</label>
                 <input
+                  name="nimNidn"
                   type="text"
+                  value={form.nimNidn}
+                  onChange={handleChange}
                   placeholder="Enter your NIM/NIDN"
                   className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200"
                 />
@@ -88,7 +121,10 @@ export default function RegisterPage() {
               <div className="w-1/2">
                 <label className="text-sm text-black">Email</label>
                 <input
+                  name="email"
                   type="email"
+                  value={form.email}
+                  onChange={handleChange}
                   placeholder="Enter your email"
                   className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200"
                 />
@@ -96,7 +132,10 @@ export default function RegisterPage() {
               <div className="w-1/2">
                 <label className="text-sm text-black">Phone No.</label>
                 <input
+                  name="phoneNumber"
                   type="tel"
+                  value={form.phoneNumber}
+                  onChange={handleChange}
                   placeholder="Your phone number"
                   className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200"
                 />
@@ -107,7 +146,10 @@ export default function RegisterPage() {
             <div className="relative">
               <label className="text-sm text-black">Password</label>
               <input
+                name="password"
                 type={showPassword ? "text" : "password"}
+                value={form.password}
+                onChange={handleChange}
                 placeholder="Enter your password"
                 className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200 pr-10"
               />
