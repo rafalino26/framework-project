@@ -1,5 +1,5 @@
 import DashboardLayout from "@/app/superadmindashboard/component/DashboardLayout";
-import RoomContent from "@/app/superadmindashboard/room/RoomContent";
+import RoomContent from "@/app/admindashboard/room/RoomContent";
 
 export default function RoomPage() {
     return (
