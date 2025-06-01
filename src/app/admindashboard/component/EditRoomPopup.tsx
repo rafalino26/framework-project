@@ -7,6 +7,8 @@ import { X } from "lucide-react";
 
 type Room = {
   id: string;
+  roomCode?: string;
+  roomName?: string;
   course: string;
   lecturer: string;
   time: string;
@@ -31,22 +33,41 @@ export default function EditRoomPopup({
 }: EditRoomPopupProps) {
   const [formData, setFormData] = useState({
     id: room.id,
+    roomCode: room.roomCode || room.id,
+    roomName: room.roomName || "",
     capacity: room.capacity.toString(),
     status: room.status,
-    facilities: room.facilities?.join(", ") || "",
+    facilities:
+      room.facilities && room.facilities.length > 0
+        ? room.facilities.join(", ")
+        : "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    onSave({
+    // Format facilities as an array if it's a string
+    const facilities =
+      typeof formData.facilities === "string"
+        ? formData.facilities
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean)
+        : formData.facilities;
+
+    // Create a clean room object
+    const updatedRoom: Room = {
       ...room,
       id: formData.id,
+      roomCode: formData.roomCode,
+      roomName: formData.roomName.trim() || undefined,
       capacity: Number(formData.capacity),
-      status: formData.status,
-      facilities: formData.facilities.split(",").map((f) => f.trim()),
-    });
+      status: formData.status as "Aktif" | "Kosong" | "Pemeliharaan",
+      facilities: facilities,
+    };
 
+    console.log("Submitting updated room data:", updatedRoom);
+    onSave(updatedRoom);
     onClose();
   };
 
@@ -56,7 +77,9 @@ export default function EditRoomPopup({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 border border-gray-200 shadow-lg">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Edit Ruangan {room.id}</h2>
+          <h2 className="text-xl font-bold">
+            Edit Ruangan {room.roomCode || room.id}
+          </h2>
           <button onClick={onClose} className="text-gray-500 hover:text-black">
             <X className="h-5 w-5" />
           </button>
@@ -71,11 +94,26 @@ export default function EditRoomPopup({
               <input
                 type="text"
                 className="w-full px-3 py-2 border border-gray-200 rounded-md"
-                value={formData.id}
+                value={formData.roomCode}
                 onChange={(e) =>
-                  setFormData({ ...formData, id: e.target.value })
+                  setFormData({ ...formData, roomCode: e.target.value })
                 }
                 disabled
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Nama Ruangan
+              </label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border border-gray-200 rounded-md"
+                value={formData.roomName}
+                onChange={(e) =>
+                  setFormData({ ...formData, roomName: e.target.value })
+                }
+                placeholder="Nama ruangan (opsional)"
               />
             </div>
 

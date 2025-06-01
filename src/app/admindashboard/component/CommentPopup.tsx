@@ -32,7 +32,7 @@ export default function CommentPopup({
 
     onSubmit({
       text: comment,
-      rating,
+      rating: rating,
     });
     onClose();
   };

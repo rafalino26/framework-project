@@ -24,6 +24,8 @@ import CommentPopup from "./CommentPopup";
 
 type Room = {
   id: string;
+  roomCode?: string;
+  roomName?: string;
   course: string;
   lecturer: string;
   time: string;
@@ -34,13 +36,15 @@ type Room = {
 };
 
 type Comment = {
-  id: string;
+  id: string | number;
   user: string;
-  text: string;
+  text?: string;
+  comment?: string;
   rating: number;
   likes: number;
   dislikes: number;
-  date: string;
+  date?: string;
+  timestamp?: string;
 };
 
 type Reservation = {
@@ -81,7 +85,7 @@ type ListDetailPopupProps = {
     comment: { text: string; rating: number }
   ) => void;
   reservations?: Reservation[];
-  comments?: Comment[];
+  comments: Comment[];
 };
 
 export default function ListDetailPopup({
@@ -109,8 +113,6 @@ export default function ListDetailPopup({
     useState<Reservation | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
-  if (!isOpen) return null;
-
   // Default schedule if not provided
   const schedule = room.schedule || [
     { day: "Senin", time: "08:00 - 10:30" },
@@ -118,30 +120,11 @@ export default function ListDetailPopup({
     { day: "Jumat", time: "10:00 - 12:30" },
   ];
 
-  // Use external comments if provided, otherwise use default
-  const comments =
-    externalComments.length > 0
-      ? externalComments
-      : room.comments || [
-          {
-            id: "1",
-            user: "Budi Santoso",
-            text: "Ruangan sangat nyaman dan bersih. AC berfungsi dengan baik.",
-            rating: 5,
-            likes: 12,
-            dislikes: 2,
-            date: "2 jam yang lalu",
-          },
-          {
-            id: "2",
-            user: "Darmawan",
-            text: "AC terlalu dingin dan tidak bisa diatur.",
-            rating: 4,
-            likes: 7,
-            dislikes: 2,
-            date: "3 hari yang lalu",
-          },
-        ];
+  // Add state to track comments when using external comments
+  const [activeComments, setActiveComments] = useState<Comment[]>([]);
+
+  // Replace the complex displayComments logic with this simpler version:
+  const displayComments = externalComments;
 
   // Filter reservations for this room
   const roomReservations = reservations.filter(
@@ -202,11 +185,25 @@ export default function ListDetailPopup({
     }
   };
 
-  // Handle add comment
+  // Update the handleAddComment function to also update local state
   const handleAddComment = (comment: { text: string; rating: number }) => {
+    // Create a new comment object
+    const newComment: Comment = {
+      id: Math.random().toString(36).substring(2, 9),
+      user: "Anda", // In a real app, this would come from authentication
+      text: comment.text,
+      rating: comment.rating,
+      likes: 0,
+      dislikes: 0,
+      date: "Baru saja",
+    };
+
+    // Call the parent handler first
     if (onAddComment) {
       onAddComment(room.id, comment);
     }
+
+    setIsCommentPopupOpen(false);
   };
 
   // Render stars for rating
@@ -239,6 +236,10 @@ export default function ListDetailPopup({
     }
   };
 
+  if (!isOpen) {
+    return null;
+  }
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto m-4">
@@ -247,7 +248,9 @@ export default function ListDetailPopup({
             Detail Ruangan {room.id}
           </h2>
           <button
-            onClick={onClose}
+            onClick={() => {
+              onClose();
+            }}
             className="text-gray-500 hover:text-gray-700"
           >
             <X className="h-5 w-5" />
@@ -255,7 +258,7 @@ export default function ListDetailPopup({
         </div>
 
         {/* Tabs */}
-        <div className="flex bg-gray-100 p-1 text-sm rounded-lg mb-6">
+        <div className="flex bg-gray-100 rounded-lg mb-6">
           <button
             className={`flex-1 py-3 px-4 text-center rounded-lg ${
               activeTab === "informasi"
@@ -328,6 +331,34 @@ export default function ListDetailPopup({
                     </div>
                   </div>
                 </div>
+
+                <div className="flex items-start">
+                  <div className="w-4 mr-3"></div>
+                  <div className="flex-1">
+                    <div className="flex items-center">
+                      <p className="text-black font-medium mr-2">
+                        Kode Ruangan:
+                      </p>
+                      <p className="text-gray-600">
+                        {room.roomCode || room.id}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {room.roomName && room.roomName !== room.id && (
+                  <div className="flex items-start">
+                    <div className="w-4 mr-3"></div>
+                    <div className="flex-1">
+                      <div className="flex items-center">
+                        <p className="text-black font-medium mr-2">
+                          Nama Ruangan:
+                        </p>
+                        <p className="text-gray-600">{room.roomName}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex items-start">
                   <div className="w-4 mr-3"></div>
@@ -447,7 +478,7 @@ export default function ListDetailPopup({
             </div>
 
             <div className="space-y-4">
-              {comments.map((comment) => (
+              {displayComments.map((comment) => (
                 <div
                   key={comment.id}
                   className="border border-gray-200 rounded-lg p-4"
@@ -455,8 +486,9 @@ export default function ListDetailPopup({
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center">
                       <span className="font-medium text-black mr-2">
-                        {comment.user.startsWith("Bu") ||
-                        comment.user.startsWith("Da")
+                        {typeof comment.user === "string" &&
+                        (comment.user.startsWith("Bu") ||
+                          comment.user.startsWith("Da"))
                           ? comment.user.substring(0, 2)
                           : comment.user.substring(0, 2)}
                       </span>
@@ -465,7 +497,9 @@ export default function ListDetailPopup({
                     {renderStars(comment.rating)}
                   </div>
 
-                  <p className="text-black mb-3">{comment.text}</p>
+                  <p className="text-black mb-3">
+                    {comment.text || comment.comment}
+                  </p>
 
                   <div className="flex justify-between items-center">
                     <div className="flex items-center space-x-4">
@@ -481,7 +515,7 @@ export default function ListDetailPopup({
 
                     <div className="flex items-center">
                       <span className="text-gray-500 text-sm mr-2">
-                        {comment.date}
+                        {comment.date || comment.timestamp}
                       </span>
                       <button className="text-red-500 hover:text-red-700">
                         <Trash2 className="h-4 w-4" />

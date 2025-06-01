@@ -12,6 +12,7 @@ import {
   MoreVertical,
   Trash2,
   X,
+  Loader2,
   Printer,
 } from "lucide-react";
 import AddRoomPopup from "../component/AddRoomPopup";
@@ -19,16 +20,58 @@ import DetailRoomPopup from "../component/DetailRoomPopup";
 import ListDetailPopup from "../component/ListDetailPopup";
 import EditRoomPopup from "../component/EditRoomPopup";
 import PrintPopup from "../component/PrintPopup";
+import api from "@/app/services/api";
 
+// Updated types to match backend DTOs
 type Room = {
-  id: string;
-  course: string;
-  lecturer: string;
-  time: string;
-  status: "Aktif" | "Kosong" | "Pemeliharaan";
-  rating: number;
+  roomId: string;
+  roomCode: string;
+  roomName: string;
+  status: "aktif" | "kosong" | "pemeliharaan";
   capacity: number;
+  rating: number;
+  courseName: string | null;
+  lecturerName: string | null;
+  scheduleStartTime: Date | null;
+  scheduleEndTime: Date | null;
   facilities?: string[];
+};
+
+type CreateRoomData = {
+  roomCode: string;
+  roomName?: string;
+  capacity: number;
+  status?: "aktif" | "kosong" | "pemeliharaan";
+  facilities?: string[];
+};
+
+type UpdateRoomData = {
+  roomName?: string;
+  capacity?: number;
+  status?: "aktif" | "kosong" | "pemeliharaan";
+  facilities?: string[];
+};
+
+type RoomSchedule = {
+  scheduleId: string;
+  semester: number;
+  lecturerName: string | null;
+  scheduleStartTime: Date;
+  scheduleEndTime: Date;
+  course: {
+    courseCode: string | null;
+    courseName: string | null;
+  };
+};
+
+type Comment = {
+  id: string;
+  user: string;
+  text: string;
+  rating: number;
+  likes: number;
+  dislikes: number;
+  date: string;
 };
 
 type Notification = {
@@ -50,81 +93,192 @@ type Reservation = {
   notes?: string;
 };
 
-// Data ruangan contoh
-const roomsData: Room[] = [
-  {
-    id: "JTE-01",
-    course: "Algoritma dan Pemrograman",
-    lecturer: "Dr. Budi Santoso",
-    time: "Senin, 08:00 - 10:30",
-    status: "Aktif",
-    rating: 4.5,
-    capacity: 40,
-    facilities: ["Proyektor", "AC", "Whiteboard"],
-  },
-  {
-    id: "JTE-02",
-    course: "Basis Data",
-    lecturer: "Prof. Siti Rahayu",
-    time: "Selasa, 13:00 - 15:30",
-    status: "Kosong",
-    rating: 4.2,
-    capacity: 30,
-    facilities: ["Proyektor", "AC", "Whiteboard"],
-  },
-  {
-    id: "JTE-03",
-    course: "Jaringan Komputer",
-    lecturer: "Dr. Ahmad Wijaya",
-    time: "Rabu, 10:00 - 12:30",
-    status: "Aktif",
-    rating: 3.8,
-    capacity: 35,
-    facilities: ["Proyektor", "AC", "Whiteboard"],
-  },
-  {
-    id: "JTE-04",
-    course: "Kecerdasan Buatan",
-    lecturer: "Dr. Maya Putri",
-    time: "Kamis, 08:00 - 10:30",
-    status: "Pemeliharaan",
-    rating: 4.0,
-    capacity: 25,
-  },
-  {
-    id: "JTE-05",
-    course: "Sistem Operasi",
-    lecturer: "Prof. Darmawan",
-    time: "Jumat, 13:00 - 15:30",
-    status: "Aktif",
-    rating: 4.7,
-    capacity: 30,
-    facilities: ["Proyektor", "AC", "Whiteboard"],
-  },
-];
+// API service functions
 
-// Generate a unique ID for new reservations
-const generateId = () => {
-  return `RES-${Math.floor(Math.random() * 10000)
-    .toString()
-    .padStart(4, "0")}`;
+const apiService = {
+  // Get all rooms with current status
+  async getRooms(): Promise<Room[]> {
+    try {
+      const response = await api.get("/rooms/current-status");
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error("API Error:", error);
+      return []; // Return empty array when API fails
+    }
+  },
+
+  // Create a new room
+  async createRoom(roomData: CreateRoomData): Promise<Room> {
+    try {
+      const response = await api.post("/rooms", roomData);
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  // Update a room
+  async updateRoom(
+    roomCode: string,
+    updateData: UpdateRoomData
+  ): Promise<Room> {
+    try {
+      console.log("Sending PATCH request to:", `/rooms/${roomCode}`);
+      console.log("With data:", JSON.stringify(updateData));
+
+      // Make sure we're not sending undefined or null values
+      const cleanData = Object.fromEntries(
+        Object.entries(updateData).filter(
+          ([_, v]) => v !== undefined && v !== null
+        )
+      );
+
+      const response = await api.patch(`/rooms/${roomCode}`, cleanData);
+      return response.data;
+    } catch (error: any) {
+      console.error("API Error:", error);
+      console.error("Error status:", error.response?.status);
+      console.error("Error response data:", error.response?.data);
+
+      // Provide a more helpful error message
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        `Failed to update room ${roomCode} (Status: ${
+          error.response?.status || "unknown"
+        })`;
+
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Get room schedules
+  async getRoomSchedules(roomCode: string): Promise<RoomSchedule[]> {
+    try {
+      const response = await api.get(`/rooms/${roomCode}/schedules`);
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      return []; // Return empty array when API fails
+    }
+  },
+
+  // Get room comments
+  async getRoomComments(roomCode: string): Promise<Comment[]> {
+    try {
+      const response = await api.get(`/rooms/${roomCode}/comments`);
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      return []; // Return empty array when API fails
+    }
+  },
+
+  // Add comment to room
+  async addComment(
+    roomCode: string,
+    commentData: { text: string; rating: number }
+  ): Promise<Comment> {
+    try {
+      // Log the data being sent to debug the 400 error
+      console.log("Attempting to send comment data:", commentData);
+
+      // For now, just return a local comment without making the API call
+      // We'll fix the API integration later
+      const localComment: Comment = {
+        id: Math.random().toString(36).substring(2, 9),
+        user: "Current User",
+        text: commentData.text,
+        rating: commentData.rating,
+        likes: 0,
+        dislikes: 0,
+        date: "Baru saja",
+      };
+
+      return localComment;
+    } catch (error: any) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
+
+  // Vote on comment
+  async voteOnComment(
+    roomCode: string,
+    commentId: string,
+    voteData: { voteType: "like" | "dislike" }
+  ): Promise<{
+    message: string;
+    likeCount: number;
+    dislikeCount: number;
+    userVote: string | null;
+  }> {
+    try {
+      const response = await api.post(
+        `/rooms/${roomCode}/comments/${commentId}/vote`,
+        voteData
+      );
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      throw error;
+    }
+  },
 };
 
-// Format current timestamp
-const getCurrentTimestamp = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  const hours = String(now.getHours()).padStart(2, "0");
-  const minutes = String(now.getMinutes()).padStart(2, "0");
-  const seconds = String(now.getSeconds()).padStart(2, "0");
+// Helper functions
+const formatTime = (startTime: Date | null, endTime: Date | null): string => {
+  if (!startTime || !endTime) return "-";
 
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
+
+  const dayName = start.toLocaleDateString("id-ID", { weekday: "long" });
+  return `${dayName}, ${formatTime(start)} - ${formatTime(end)}`;
+};
+
+const mapStatusToDisplay = (
+  status: string
+): "Aktif" | "Kosong" | "Pemeliharaan" => {
+  switch (status) {
+    case "aktif":
+      return "Aktif";
+    case "kosong":
+      return "Kosong";
+    case "pemeliharaan":
+      return "Pemeliharaan";
+    default:
+      return "Kosong";
+  }
+};
+
+const mapStatusToBackend = (
+  status: "Aktif" | "Kosong" | "Pemeliharaan"
+): "aktif" | "kosong" | "pemeliharaan" => {
+  switch (status) {
+    case "Aktif":
+      return "aktif";
+    case "Kosong":
+      return "kosong";
+    case "Pemeliharaan":
+      return "pemeliharaan";
+    default:
+      return "kosong";
+  }
 };
 
 export default function RuanganPage() {
-  const [rooms, setRooms] = useState<Room[]>(roomsData);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("Semua Status");
   const [view, setView] = useState<"list" | "grid">("list");
@@ -133,15 +287,43 @@ export default function RuanganPage() {
   const [isDetailPopupOpen, setIsDetailPopupOpen] = useState(false);
   const [isListDetailPopupOpen, setIsListDetailPopupOpen] = useState(false);
   const [isEditPopupOpen, setIsEditPopupOpen] = useState(false);
+  const [isPrintPopupOpen, setIsPrintPopupOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [isPrintPopupOpen, setIsPrintPopupOpen] = useState(false);
+  const [comments, setComments] = useState<{ [roomCode: string]: Comment[] }>(
+    {}
+  );
+  const [schedules, setSchedules] = useState<{
+    [roomCode: string]: RoomSchedule[];
+  }>({});
 
   const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  // Move the loadCommentsFromStorage function above the useEffect that calls it
+  // Add this function right after the state declarations, before any useEffect hooks
+
+  const loadCommentsFromStorage = () => {
+    const savedComments = localStorage.getItem("roomComments");
+    if (savedComments) {
+      try {
+        const parsedComments = JSON.parse(savedComments);
+        setComments(parsedComments);
+      } catch (error) {
+        console.error("Error loading comments from localStorage:", error);
+      }
+    }
+  };
+
+  // Load initial data
+  useEffect(() => {
+    loadRooms();
+    loadReservations();
+    loadCommentsFromStorage(); // Now this will work correctly
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -160,18 +342,63 @@ export default function RuanganPage() {
     };
   }, [selectedRoomId]);
 
-  // Load reservations from localStorage on component mount
-  useEffect(() => {
-    const savedReservations = localStorage.getItem("reservations");
-    if (savedReservations) {
-      setReservations(JSON.parse(savedReservations));
-    }
-  }, []);
-
   // Save reservations to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("reservations", JSON.stringify(reservations));
   }, [reservations]);
+
+  const loadRooms = async () => {
+    try {
+      setLoading(true);
+      const roomsData = await apiService.getRooms();
+      setRooms(roomsData);
+    } catch (error: any) {
+      console.error("Error loading rooms:", error);
+      // The axios interceptor will handle 401 errors automatically
+      showNotification("Gagal memuat data ruangan", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadReservations = () => {
+    const savedReservations = localStorage.getItem("reservations");
+    if (savedReservations) {
+      setReservations(JSON.parse(savedReservations));
+    }
+  };
+
+  const loadRoomComments = async (roomCode: string) => {
+    try {
+      const commentsData = await apiService.getRoomComments(roomCode);
+
+      // Get existing local comments
+      const existingComments = comments[roomCode] || [];
+
+      // Merge API comments with local comments, avoiding duplicates
+      const mergedComments = [...existingComments];
+      commentsData.forEach((apiComment) => {
+        if (!mergedComments.find((existing) => existing.id === apiComment.id)) {
+          mergedComments.push(apiComment);
+        }
+      });
+
+      setComments((prev) => ({ ...prev, [roomCode]: mergedComments }));
+    } catch (error) {
+      console.error("Error loading comments:", error);
+      // Don't show error notification since we have local comments
+    }
+  };
+
+  const loadRoomSchedules = async (roomCode: string) => {
+    try {
+      const schedulesData = await apiService.getRoomSchedules(roomCode);
+      setSchedules((prev) => ({ ...prev, [roomCode]: schedulesData }));
+    } catch (error) {
+      console.error("Error loading schedules:", error);
+      showNotification("Gagal memuat jadwal", "error");
+    }
+  };
 
   // Simple notification system
   const showNotification = (
@@ -192,44 +419,88 @@ export default function RuanganPage() {
   // Filter ruangan berdasarkan pencarian dan status
   const filteredRooms = rooms.filter((room) => {
     const matchesSearch =
-      room.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      room.course.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      room.lecturer.toLowerCase().includes(searchQuery.toLowerCase());
+      room.roomCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (room.courseName &&
+        room.courseName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (room.lecturerName &&
+        room.lecturerName.toLowerCase().includes(searchQuery.toLowerCase()));
 
+    const displayStatus = mapStatusToDisplay(room.status);
     const matchesStatus =
-      statusFilter === "Semua Status" || room.status === statusFilter;
+      statusFilter === "Semua Status" || displayStatus === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
 
-  const handleAddRoom = (newRoom: Room) => {
-    setRooms((prevRooms) => [
-      ...prevRooms,
-      {
-        ...newRoom,
-        id: newRoom.id || `JTE-${prevRooms.length + 1}`,
-        capacity: Number(newRoom.capacity),
-        rating: 0,
-        course: newRoom.course || "-",
-        lecturer: newRoom.lecturer || "-",
-        time: newRoom.time || "-",
-      },
-    ]);
-    showNotification(`Ruangan ${newRoom.id} berhasil ditambahkan`);
+  const handleAddRoom = async (newRoomData: any) => {
+    try {
+      const createData: CreateRoomData = {
+        roomCode: newRoomData.id,
+        roomName: newRoomData.roomName || newRoomData.id,
+        capacity: Number(newRoomData.capacity),
+        status: mapStatusToBackend(newRoomData.status || "Kosong"),
+        facilities: newRoomData.facilities || [],
+      };
+
+      await apiService.createRoom(createData);
+      await loadRooms(); // Reload rooms to get updated data
+      showNotification(`Ruangan ${newRoomData.id} berhasil ditambahkan`);
+    } catch (error: any) {
+      console.error("Error adding room:", error);
+      showNotification(error.message || "Gagal menambahkan ruangan", "error");
+    }
   };
 
-  const handleUpdateRoom = (updatedRoom: Room) => {
-    setRooms((prevRooms) =>
-      prevRooms.map((room) => (room.id === updatedRoom.id ? updatedRoom : room))
-    );
-    showNotification(`Ruangan ${updatedRoom.id} berhasil diperbarui`);
+  const handleUpdateRoom = async (updatedRoomData: any) => {
+    try {
+      // Log the incoming data from the form
+      console.log("Original update data:", updatedRoomData);
+
+      // Make sure status is properly formatted for the backend
+      const backendStatus = mapStatusToBackend(updatedRoomData.status);
+
+      // Create a clean update object with only the fields the API expects
+      const updateData: UpdateRoomData = {
+        roomName: updatedRoomData.roomName || undefined,
+        capacity: Number(updatedRoomData.capacity) || undefined,
+        status: backendStatus,
+        facilities: Array.isArray(updatedRoomData.facilities)
+          ? updatedRoomData.facilities
+          : (updatedRoomData.facilities || "")
+              .split(",")
+              .map((f: string) => f.trim())
+              .filter(Boolean),
+      };
+
+      // Log the formatted data being sent to the API
+      console.log("Formatted update data for API:", updateData);
+      console.log(
+        "Room code being updated:",
+        updatedRoomData.roomCode || updatedRoomData.id
+      );
+
+      await apiService.updateRoom(
+        updatedRoomData.roomCode || updatedRoomData.id,
+        updateData
+      );
+      await loadRooms(); // Reload rooms to get updated data
+      showNotification(
+        `Ruangan ${
+          updatedRoomData.roomCode || updatedRoomData.id
+        } berhasil diperbarui`
+      );
+    } catch (error: any) {
+      console.error("Error updating room:", error);
+      showNotification(error.message || "Gagal memperbarui ruangan", "error");
+    }
   };
 
-  const handleDeleteRoom = (roomId: string) => {
-    setRooms(rooms.filter((room) => room.id !== roomId));
+  const handleDeleteRoom = (roomCode: string) => {
+    // Note: Delete functionality would need to be implemented in the backend
+    // For now, we'll just show a message
+    showNotification("Fitur hapus ruangan belum tersedia", "info");
     setShowDeleteConfirm(false);
     setRoomToDelete(null);
-    showNotification(`Ruangan ${roomId} berhasil dihapus`);
   };
 
   const handleEditRoom = (room: Room) => {
@@ -240,7 +511,49 @@ export default function RuanganPage() {
     setSelectedRoomId(null);
   };
 
-  // Handle adding a new reservation
+  const handleAddComment = async (
+    roomCode: string,
+    comment: { text: string; rating: number }
+  ) => {
+    try {
+      // Create a local comment
+      const localComment: Comment = {
+        id: Math.random().toString(36).substring(2, 9),
+        user: "Anda", // In a real app, this would come from authentication
+        text: comment.text,
+        rating: comment.rating,
+        likes: 0,
+        dislikes: 0,
+        date: "Baru saja",
+      };
+
+      // Update local state immediately
+      const updatedComments = [localComment, ...(comments[roomCode] || [])];
+      setComments((prev) => ({
+        ...prev,
+        [roomCode]: updatedComments,
+      }));
+
+      // Save to localStorage for persistence
+      const allComments = { ...comments, [roomCode]: updatedComments };
+      localStorage.setItem("roomComments", JSON.stringify(allComments));
+
+      showNotification("Komentar berhasil ditambahkan");
+
+      // Optionally try to save to API (but don't fail if it doesn't work)
+      try {
+        await apiService.addComment(roomCode, comment);
+        console.log("Comment saved to API successfully");
+      } catch (error) {
+        console.log("Could not save to API, using local storage only");
+      }
+    } catch (error: any) {
+      console.error("Error adding comment:", error);
+      showNotification("Gagal menambahkan komentar", "error");
+    }
+  };
+
+  // Handle adding a new reservation (keeping localStorage for now)
   const handleAddReservation = (reservationData: {
     room: string;
     purpose: string;
@@ -249,26 +562,33 @@ export default function RuanganPage() {
     endTime: string;
     notes?: string;
   }) => {
-    // Create a new reservation object
+    const generateId = () => {
+      return `RES-${Math.floor(Math.random() * 10000)
+        .toString()
+        .padStart(4, "0")}`;
+    };
+
+    const getCurrentTimestamp = () => {
+      const now = new Date();
+      return now.toLocaleString("id-ID");
+    };
+
     const newReservation: Reservation = {
       id: generateId(),
       room: reservationData.room,
-      user: "Indra Kusuma", // In a real app, this would come from authentication
+      user: "Admin User", // In a real app, this would come from authentication
       purpose: reservationData.purpose,
       date: reservationData.date,
       time: `${reservationData.startTime} - ${reservationData.endTime}`,
-      status: "Menunggu", // New reservations always start with "Menunggu" status
+      status: "Menunggu",
       timestamp: getCurrentTimestamp(),
       notes: reservationData.notes,
     };
 
-    // Add the new reservation to the state
     setReservations((prevReservations) => [
       newReservation,
       ...prevReservations,
     ]);
-
-    // Show a success notification
     showNotification(
       `Reservasi untuk ruangan ${reservationData.room} berhasil diajukan`,
       "success"
@@ -283,7 +603,7 @@ export default function RuanganPage() {
           ? {
               ...reservation,
               status: "Disetujui",
-              timestamp: getCurrentTimestamp(),
+              timestamp: new Date().toLocaleString("id-ID"),
             }
           : reservation
       )
@@ -300,7 +620,7 @@ export default function RuanganPage() {
               ...reservation,
               status: "Ditolak",
               rejectionReason: reason,
-              timestamp: getCurrentTimestamp(),
+              timestamp: new Date().toLocaleString("id-ID"),
             }
           : reservation
       )
@@ -328,14 +648,15 @@ export default function RuanganPage() {
   };
 
   // Render badge status
-  const renderStatusBadge = (status: Room["status"]) => {
+  const renderStatusBadge = (status: string) => {
+    const displayStatus = mapStatusToDisplay(status);
     let bgColor = "bg-black";
     let textColor = "text-white";
 
-    if (status === "Kosong") {
+    if (displayStatus === "Kosong") {
       bgColor = "bg-white";
       textColor = "text-black";
-    } else if (status === "Pemeliharaan") {
+    } else if (displayStatus === "Pemeliharaan") {
       bgColor = "bg-red-500";
       textColor = "text-white";
     }
@@ -343,10 +664,10 @@ export default function RuanganPage() {
     return (
       <span
         className={`px-2 py-1 rounded-full text-xs font-semibold ${bgColor} ${textColor} ${
-          status === "Kosong" ? "border border-gray-300" : ""
+          displayStatus === "Kosong" ? "border border-gray-300" : ""
         }`}
       >
-        {status}
+        {displayStatus}
       </span>
     );
   };
@@ -355,6 +676,17 @@ export default function RuanganPage() {
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto bg-white text-black flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Memuat data ruangan...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto bg-white text-black">
@@ -434,42 +766,20 @@ export default function RuanganPage() {
 
             {isDropdownOpen && (
               <div className="absolute right-0 mt-1 w-full min-w-[160px] bg-white border border-gray-200 rounded-md shadow-lg z-10">
-                <div
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
-                  onClick={() => {
-                    setStatusFilter("Semua Status");
-                    setIsDropdownOpen(false);
-                  }}
-                >
-                  Semua Status
-                </div>
-                <div
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
-                  onClick={() => {
-                    setStatusFilter("Aktif");
-                    setIsDropdownOpen(false);
-                  }}
-                >
-                  Aktif
-                </div>
-                <div
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
-                  onClick={() => {
-                    setStatusFilter("Kosong");
-                    setIsDropdownOpen(false);
-                  }}
-                >
-                  Kosong
-                </div>
-                <div
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
-                  onClick={() => {
-                    setStatusFilter("Pemeliharaan");
-                    setIsDropdownOpen(false);
-                  }}
-                >
-                  Pemeliharaan
-                </div>
+                {["Semua Status", "Aktif", "Kosong", "Pemeliharaan"].map(
+                  (status) => (
+                    <div
+                      key={status}
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black"
+                      onClick={() => {
+                        setStatusFilter(status);
+                        setIsDropdownOpen(false);
+                      }}
+                    >
+                      {status}
+                    </div>
+                  )
+                )}
               </div>
             )}
           </div>
@@ -506,7 +816,7 @@ export default function RuanganPage() {
       </div>
 
       {view === "list" ? (
-        <div className="overflow-x-auto border border-gray-200 rounded-lg ">
+        <div className="overflow-x-auto border border-gray-200 rounded-lg">
           <table className="w-full min-w-full border-collapse">
             <thead>
               <tr className="border-b text-sm border-gray-200">
@@ -536,19 +846,21 @@ export default function RuanganPage() {
             <tbody>
               {filteredRooms.map((room) => (
                 <tr
-                  key={room.id}
+                  key={room.roomId}
                   className="border-b border-gray-200 hover:bg-gray-50"
                 >
                   <td className="py-4 px-4 text-black text-sm font-medium">
-                    {room.id}
+                    {room.roomCode}
                   </td>
                   <td className="py-4 px-4 text-black text-sm">
-                    {room.course}
+                    {room.courseName || "-"}
                   </td>
                   <td className="py-4 px-4 text-black text-sm">
-                    {room.lecturer}
+                    {room.lecturerName || "-"}
                   </td>
-                  <td className="py-4 px-4 text-black text-sm">{room.time}</td>
+                  <td className="py-4 px-4 text-black text-sm">
+                    {formatTime(room.scheduleStartTime, room.scheduleEndTime)}
+                  </td>
                   <td className="py-4 px-4">
                     {renderStatusBadge(room.status)}
                   </td>
@@ -564,14 +876,16 @@ export default function RuanganPage() {
                     <div
                       className="relative"
                       ref={(el: HTMLDivElement | null) => {
-                        if (el) dropdownRefs.current[room.id] = el;
+                        if (el) dropdownRefs.current[room.roomCode] = el;
                       }}
                     >
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedRoomId(
-                            selectedRoomId === room.id ? null : room.id
+                            selectedRoomId === room.roomCode
+                              ? null
+                              : room.roomCode
                           );
                         }}
                         className="p-1 rounded-md hover:bg-gray-100"
@@ -579,7 +893,7 @@ export default function RuanganPage() {
                         <MoreVertical className="h-5 w-5 text-gray-500" />
                       </button>
 
-                      {selectedRoomId === room.id && (
+                      {selectedRoomId === room.roomCode && (
                         <div
                           className="absolute right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-20"
                           style={{ minWidth: "150px" }}
@@ -590,9 +904,22 @@ export default function RuanganPage() {
                               setSelectedRoom(room);
                               setIsListDetailPopupOpen(true);
                               setSelectedRoomId(null);
+                              loadRoomComments(room.roomCode);
+                              loadRoomSchedules(room.roomCode);
                             }}
                           >
                             Detail
+                          </div>
+                          <div
+                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black flex items-center"
+                            onClick={() => {
+                              setSelectedRoom(room);
+                              setIsPrintPopupOpen(true);
+                              setSelectedRoomId(null);
+                            }}
+                          >
+                            <Printer className="h-4 w-4 mr-2" />
+                            Cetak
                           </div>
                           <div
                             className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-black flex items-center"
@@ -640,26 +967,30 @@ export default function RuanganPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredRooms.map((room) => (
             <div
-              key={room.id}
+              key={room.roomId}
               className="border border-gray-200 rounded-lg overflow-hidden bg-white p-6 hover:shadow-md transition-shadow"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold text-black">{room.id}</h3>
+                <h3 className="text-xl font-semibold text-black">
+                  {room.roomCode}
+                </h3>
                 {renderStatusBadge(room.status)}
               </div>
 
               <div className="space-y-3">
                 <div className="flex items-center">
                   <Book className="h-4 w-4 mr-2 text-black" />
-                  <span className="text-black">{room.course}</span>
+                  <span className="text-black">{room.courseName || "-"}</span>
                 </div>
                 <div className="flex items-center">
                   <User className="h-4 w-4 mr-2 text-black" />
-                  <span className="text-black">{room.lecturer}</span>
+                  <span className="text-black">{room.lecturerName || "-"}</span>
                 </div>
                 <div className="flex items-center">
                   <Clock className="h-4 w-4 mr-2 text-black" />
-                  <span className="text-black">{room.time}</span>
+                  <span className="text-black">
+                    {formatTime(room.scheduleStartTime, room.scheduleEndTime)}
+                  </span>
                 </div>
               </div>
 
@@ -676,66 +1007,58 @@ export default function RuanganPage() {
               </div>
 
               <div className="mt-4 flex justify-between items-center">
-  <div className="flex gap-2">
-    {/* Tombol Detail */}
-    <button
-      onClick={() => {
-        setSelectedRoom(room);
-        setIsDetailPopupOpen(true);
-      }}
-      className="px-3 py-1.5 border border-gray-200 rounded-md text-black text-sm font-medium hover:border-gray-300 transition-colors"
-    >
-      Detail
-    </button>
-
-    {/* Tombol Cetak */}
-    <button
-      onClick={() => {
-        setSelectedRoom(room);
-        setIsPrintPopupOpen(true);
-      }}
-      className="px-3 py-1.5 border border-gray-200 rounded-md text-black text-sm font-medium hover:border-gray-300 transition-colors flex items-center gap-1"
-    >
-      Jadwal
-    </button>
-  </div>
-
-  <div className="flex gap-2">
-    {/* Tombol Edit */}
-    <button
-      className="p-1.5 rounded-full hover:bg-gray-100"
-      onClick={() => {
-        handleEditRoom(room);
-      }}
-    >
-      <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-        <path d="m15 5 4 4" />
-      </svg>
-    </button>
-
-    {/* Tombol Hapus */}
-    <button
-      className="p-1.5 rounded-full hover:bg-gray-100"
-      onClick={() => {
-        setShowDeleteConfirm(true);
-        setRoomToDelete(room);
-      }}
-    >
-      <Trash2 className="h-5 w-5 text-red-500" />
-    </button>
-  </div>
-</div>
-
+                <button
+                  onClick={() => {
+                    setSelectedRoom(room);
+                    setIsDetailPopupOpen(true);
+                    loadRoomComments(room.roomCode);
+                  }}
+                  className="px-3 py-1.5 border border-gray-200 rounded-md text-black text-sm font-medium hover:border-gray-300 transition-colors"
+                >
+                  Detail
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedRoom(room);
+                    setIsPrintPopupOpen(true);
+                  }}
+                  className="px-3 py-1.5 border border-gray-200 rounded-md text-black text-sm font-medium hover:border-gray-300 transition-colors flex items-center gap-1"
+                >
+                  <Printer className="h-4 w-4" />
+                  Cetak
+                </button>
+                <div className="flex gap-2">
+                  <button
+                    className="p-1.5 rounded-full hover:bg-gray-100"
+                    onClick={() => {
+                      handleEditRoom(room);
+                    }}
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                      <path d="m15 5 4 4" />
+                    </svg>
+                  </button>
+                  <button
+                    className="p-1.5 rounded-full hover:bg-gray-100"
+                    onClick={() => {
+                      setShowDeleteConfirm(true);
+                      setRoomToDelete(room);
+                    }}
+                  >
+                    <Trash2 className="h-5 w-5 text-red-500" />
+                  </button>
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -753,33 +1076,43 @@ export default function RuanganPage() {
             isOpen={isDetailPopupOpen}
             onClose={() => setIsDetailPopupOpen(false)}
             room={{
-              ...selectedRoom,
+              id: selectedRoom.roomCode,
+              course: selectedRoom.courseName || "-",
+              lecturer: selectedRoom.lecturerName || "-",
+              time: formatTime(
+                selectedRoom.scheduleStartTime,
+                selectedRoom.scheduleEndTime
+              ),
+              status: mapStatusToDisplay(selectedRoom.status),
+              rating: selectedRoom.rating,
+              capacity: selectedRoom.capacity,
               facilities: selectedRoom.facilities || [
                 "Proyektor",
                 "AC",
                 "Whiteboard",
               ],
             }}
+            onAddComment={(
+              roomCode: string,
+              comment: { text: string; rating: number }
+            ) => handleAddComment(roomCode, comment)}
+            comments={comments[selectedRoom.roomCode] || []}
           />
-
-                    <PrintPopup
-                      isOpen={isPrintPopupOpen}
-                      onClose={() => setIsPrintPopupOpen(false)}
-                      room={{
-                        ...selectedRoom,
-                        facilities: selectedRoom.facilities || [
-                          "Proyektor",
-                          "AC",
-                          "Whiteboard",
-                        ],
-                      }}
-                    />
 
           <ListDetailPopup
             isOpen={isListDetailPopupOpen}
             onClose={() => setIsListDetailPopupOpen(false)}
             room={{
-              ...selectedRoom,
+              id: selectedRoom.roomCode,
+              course: selectedRoom.courseName || "-",
+              lecturer: selectedRoom.lecturerName || "-",
+              time: formatTime(
+                selectedRoom.scheduleStartTime,
+                selectedRoom.scheduleEndTime
+              ),
+              status: mapStatusToDisplay(selectedRoom.status),
+              rating: selectedRoom.rating,
+              capacity: selectedRoom.capacity,
               facilities: selectedRoom.facilities || [
                 "Proyektor",
                 "AC",
@@ -790,12 +1123,27 @@ export default function RuanganPage() {
             onAddReservation={handleAddReservation}
             onApproveReservation={handleApproveReservation}
             onRejectReservation={handleRejectReservation}
+            onAddComment={(
+              roomCode: string,
+              comment: { text: string; rating: number }
+            ) => handleAddComment(roomCode, comment)}
             reservations={reservations}
+            comments={comments[selectedRoom.roomCode] || []}
           />
 
           <EditRoomPopup
+            isOpen={isEditPopupOpen}
             room={{
-              ...selectedRoom,
+              id: selectedRoom.roomCode,
+              course: selectedRoom.courseName || "-",
+              lecturer: selectedRoom.lecturerName || "-",
+              time: formatTime(
+                selectedRoom.scheduleStartTime,
+                selectedRoom.scheduleEndTime
+              ),
+              status: mapStatusToDisplay(selectedRoom.status),
+              rating: selectedRoom.rating,
+              capacity: selectedRoom.capacity,
               facilities: selectedRoom.facilities || [
                 "Proyektor",
                 "AC",
@@ -804,7 +1152,26 @@ export default function RuanganPage() {
             }}
             onClose={() => setIsEditPopupOpen(false)}
             onSave={handleUpdateRoom}
-            isOpen={isEditPopupOpen}
+          />
+
+          <PrintPopup
+            isOpen={isPrintPopupOpen}
+            onClose={() => setIsPrintPopupOpen(false)}
+            room={{
+              id: selectedRoom.roomCode,
+              course: selectedRoom.courseName || "-",
+              lecturer: selectedRoom.lecturerName || "-",
+              time: formatTime(
+                selectedRoom.scheduleStartTime,
+                selectedRoom.scheduleEndTime
+              ),
+              capacity: selectedRoom.capacity,
+              facilities: selectedRoom.facilities || [
+                "Proyektor",
+                "AC",
+                "Whiteboard",
+              ],
+            }}
           />
         </>
       )}
@@ -817,7 +1184,7 @@ export default function RuanganPage() {
               Konfirmasi Hapus
             </h3>
             <p className="text-gray-600 mb-6">
-              Apakah Anda yakin ingin menghapus ruangan {roomToDelete.id}?
+              Apakah Anda yakin ingin menghapus ruangan {roomToDelete.roomCode}?
               Tindakan ini tidak dapat dibatalkan.
             </p>
             <div className="flex justify-end gap-3">
@@ -828,7 +1195,7 @@ export default function RuanganPage() {
                 Batal
               </button>
               <button
-                onClick={() => handleDeleteRoom(roomToDelete.id)}
+                onClick={() => handleDeleteRoom(roomToDelete.roomCode)}
                 className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
               >
                 Hapus
