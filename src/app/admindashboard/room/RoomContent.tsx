@@ -64,9 +64,10 @@ type RoomSchedule = {
   };
 };
 
+// Replace the Comment type definition:
 type Comment = {
   id: string;
-  user: string;
+  user: string | { fullName?: string; username?: string; id?: string };
   text: string;
   rating: number;
   likes: number;
@@ -180,27 +181,48 @@ const apiService = {
     roomCode: string,
     commentData: { text: string; rating: number }
   ): Promise<Comment> {
-    try {
-      // Log the data being sent to debug the 400 error
-      console.log("Attempting to send comment data:", commentData);
+    const debugMode = false; // Set to true only when debugging
 
-      // For now, just return a local comment without making the API call
-      // We'll fix the API integration later
-      const localComment: Comment = {
-        id: Math.random().toString(36).substring(2, 9),
-        user: "Current User",
-        text: commentData.text,
-        rating: commentData.rating,
-        likes: 0,
-        dislikes: 0,
-        date: "Baru saja",
-      };
-
-      return localComment;
-    } catch (error: any) {
-      console.error("API Error:", error);
-      throw error;
+    if (debugMode) {
+      console.log("=== COMMENT API DEBUG ===");
+      console.log("Room Code:", roomCode);
+      console.log("Comment Data:", commentData);
+      console.log(
+        "API URL:",
+        `${process.env.NEXT_PUBLIC_API_URL}/rooms/${roomCode}/comments`
+      );
     }
+
+    // Use the correct field name expected by the backend: commentText
+    const payload = {
+      commentText: commentData.text,
+      rating: commentData.rating,
+    };
+
+    try {
+      if (debugMode) console.log("Sending payload:", payload);
+
+      const response = await api.post(`/rooms/${roomCode}/comments`, payload);
+
+      if (debugMode) console.log("Response data:", response.data);
+      return this.transformCommentResponse(response.data);
+    } catch (error) {
+      console.error("Failed to add comment:", error);
+      throw new Error("Comment API not available");
+    }
+  },
+
+  // Update the transformCommentResponse method:
+  transformCommentResponse(data: any): Comment {
+    return {
+      id: data.id || String(Math.random()),
+      user: data.user || data.user?.fullName || data.user?.username || "User",
+      text: data.commentText || "", // Backend returns commentText
+      rating: data.rating || 0,
+      likes: data.likeCount || 0,
+      dislikes: data.dislikeCount || 0,
+      date: data.createdAtRelative || new Date().toLocaleString("id-ID"),
+    };
   },
 
   // Vote on comment
@@ -351,6 +373,7 @@ export default function RuanganPage() {
     try {
       setLoading(true);
       const roomsData = await apiService.getRooms();
+      console.log("Rooms data from API:", roomsData);
       setRooms(roomsData);
     } catch (error: any) {
       console.error("Error loading rooms:", error);
@@ -459,17 +482,25 @@ export default function RuanganPage() {
       // Make sure status is properly formatted for the backend
       const backendStatus = mapStatusToBackend(updatedRoomData.status);
 
+      // Process facilities properly - don't override with defaults
+      let facilities: string[] = [];
+      if (updatedRoomData.facilities) {
+        if (Array.isArray(updatedRoomData.facilities)) {
+          facilities = updatedRoomData.facilities;
+        } else if (typeof updatedRoomData.facilities === "string") {
+          facilities = updatedRoomData.facilities
+            .split(",")
+            .map((f: string) => f.trim())
+            .filter(Boolean);
+        }
+      }
+
       // Create a clean update object with only the fields the API expects
       const updateData: UpdateRoomData = {
         roomName: updatedRoomData.roomName || undefined,
         capacity: Number(updatedRoomData.capacity) || undefined,
         status: backendStatus,
-        facilities: Array.isArray(updatedRoomData.facilities)
-          ? updatedRoomData.facilities
-          : (updatedRoomData.facilities || "")
-              .split(",")
-              .map((f: string) => f.trim())
-              .filter(Boolean),
+        facilities: facilities.length > 0 ? facilities : undefined,
       };
 
       // Log the formatted data being sent to the API
@@ -479,11 +510,15 @@ export default function RuanganPage() {
         updatedRoomData.roomCode || updatedRoomData.id
       );
 
-      await apiService.updateRoom(
+      const updatedRoom = await apiService.updateRoom(
         updatedRoomData.roomCode || updatedRoomData.id,
         updateData
       );
+      console.log("Response from API after update:", updatedRoom);
+
       await loadRooms(); // Reload rooms to get updated data
+      console.log("Rooms after reload:", rooms);
+
       showNotification(
         `Ruangan ${
           updatedRoomData.roomCode || updatedRoomData.id
@@ -511,12 +546,31 @@ export default function RuanganPage() {
     setSelectedRoomId(null);
   };
 
+  // Update the handleAddComment function to handle the "refresh" hack for like/dislike/delete
   const handleAddComment = async (
     roomCode: string,
     comment: { text: string; rating: number }
   ) => {
     try {
-      // Create a local comment
+      // If this is an empty comment with rating 0, it's a signal to refresh comments
+      if (comment.text === "" && comment.rating === 0) {
+        // Just reload the comments
+        loadCommentsFromStorage();
+        return;
+      }
+
+      // Create a comment with real timestamp
+      const now = new Date();
+      const timestamp = now.toLocaleString("id-ID", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+
+      // Create local comment first for immediate UI update
       const localComment: Comment = {
         id: Math.random().toString(36).substring(2, 9),
         user: "Anda", // In a real app, this would come from authentication
@@ -524,7 +578,7 @@ export default function RuanganPage() {
         rating: comment.rating,
         likes: 0,
         dislikes: 0,
-        date: "Baru saja",
+        date: timestamp,
       };
 
       // Update local state immediately
@@ -538,14 +592,39 @@ export default function RuanganPage() {
       const allComments = { ...comments, [roomCode]: updatedComments };
       localStorage.setItem("roomComments", JSON.stringify(allComments));
 
-      showNotification("Komentar berhasil ditambahkan");
+      // Show immediate feedback
+      showNotification(
+        "Komentar ditambahkan (mencoba sinkronisasi dengan database...)",
+        "info"
+      );
 
-      // Optionally try to save to API (but don't fail if it doesn't work)
+      // Try to save to API in the background
       try {
-        await apiService.addComment(roomCode, comment);
-        console.log("Comment saved to API successfully");
-      } catch (error) {
-        console.log("Could not save to API, using local storage only");
+        const apiComment = await apiService.addComment(roomCode, comment);
+
+        // If API succeeds, replace the local comment with the API response
+        const apiUpdatedComments = [
+          apiComment,
+          ...(comments[roomCode] || []).filter((c) => c.id !== localComment.id),
+        ];
+        setComments((prev) => ({
+          ...prev,
+          [roomCode]: apiUpdatedComments,
+        }));
+
+        // Update localStorage with API response
+        const apiAllComments = { ...comments, [roomCode]: apiUpdatedComments };
+        localStorage.setItem("roomComments", JSON.stringify(apiAllComments));
+
+        showNotification("Komentar berhasil disimpan ke database!", "success");
+      } catch (apiError: any) {
+        // Silently handle API errors - the comment is already saved locally
+        let errorMessage =
+          "Komentar disimpan secara lokal (database tidak tersedia)";
+        if (apiError.message?.includes("not available")) {
+          errorMessage = "Komentar disimpan lokal - API tidak tersedia";
+        }
+        showNotification(errorMessage, "info");
       }
     } catch (error: any) {
       console.error("Error adding comment:", error);
@@ -1070,6 +1149,13 @@ export default function RuanganPage() {
         onAddRoom={handleAddRoom}
       />
 
+      {selectedRoom &&
+        (() => {
+          console.log("Selected room facilities:", selectedRoom.facilities);
+          console.log("Selected room full data:", selectedRoom);
+          return null;
+        })()}
+
       {selectedRoom && (
         <>
           <DetailRoomPopup
@@ -1086,11 +1172,7 @@ export default function RuanganPage() {
               status: mapStatusToDisplay(selectedRoom.status),
               rating: selectedRoom.rating,
               capacity: selectedRoom.capacity,
-              facilities: selectedRoom.facilities || [
-                "Proyektor",
-                "AC",
-                "Whiteboard",
-              ],
+              facilities: selectedRoom.facilities || [], // Don't use default values
             }}
             onAddComment={(
               roomCode: string,
@@ -1113,11 +1195,7 @@ export default function RuanganPage() {
               status: mapStatusToDisplay(selectedRoom.status),
               rating: selectedRoom.rating,
               capacity: selectedRoom.capacity,
-              facilities: selectedRoom.facilities || [
-                "Proyektor",
-                "AC",
-                "Whiteboard",
-              ],
+              facilities: selectedRoom.facilities || [], // Don't use default values
             }}
             onUpdateRoom={handleUpdateRoom}
             onAddReservation={handleAddReservation}
@@ -1144,11 +1222,7 @@ export default function RuanganPage() {
               status: mapStatusToDisplay(selectedRoom.status),
               rating: selectedRoom.rating,
               capacity: selectedRoom.capacity,
-              facilities: selectedRoom.facilities || [
-                "Proyektor",
-                "AC",
-                "Whiteboard",
-              ],
+              facilities: selectedRoom.facilities || [], // Don't use default values
             }}
             onClose={() => setIsEditPopupOpen(false)}
             onSave={handleUpdateRoom}
@@ -1166,11 +1240,7 @@ export default function RuanganPage() {
                 selectedRoom.scheduleEndTime
               ),
               capacity: selectedRoom.capacity,
-              facilities: selectedRoom.facilities || [
-                "Proyektor",
-                "AC",
-                "Whiteboard",
-              ],
+              facilities: selectedRoom.facilities || [], // Don't use default values
             }}
           />
         </>

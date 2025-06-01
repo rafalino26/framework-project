@@ -37,7 +37,12 @@ type Room = {
 
 type Comment = {
   id: string | number;
-  user: string;
+  user:
+    | string
+    | {
+        fullName?: string;
+        username?: string;
+      };
   text?: string;
   comment?: string;
   rating: number;
@@ -100,6 +105,10 @@ export default function ListDetailPopup({
   reservations = [],
   comments: externalComments = [],
 }: ListDetailPopupProps) {
+  // Add this logging to see what facilities are being received
+  console.log("ListDetailPopup - Room facilities:", room.facilities);
+  console.log("ListDetailPopup - Full room data:", room);
+
   const [activeTab, setActiveTab] = useState<
     "informasi" | "komentar" | "reservasi"
   >("informasi");
@@ -204,6 +213,147 @@ export default function ListDetailPopup({
     }
 
     setIsCommentPopupOpen(false);
+  };
+
+  // Add these functions after the existing handleAddComment function:
+
+  const handleLikeComment = async (commentId: string | number) => {
+    try {
+      // Find the comment and update it optimistically
+      const updatedComments = displayComments.map((comment) => {
+        if (comment.id === commentId) {
+          return { ...comment, likes: comment.likes + 1 };
+        }
+        return comment;
+      });
+
+      // Update localStorage immediately
+      const savedComments = localStorage.getItem("roomComments");
+      if (savedComments) {
+        const allComments = JSON.parse(savedComments);
+        allComments[room.id] = updatedComments;
+        localStorage.setItem("roomComments", JSON.stringify(allComments));
+      }
+
+      // Trigger parent component to reload comments from localStorage
+      if (onAddComment) {
+        onAddComment(room.id, { text: "", rating: 0 });
+      }
+
+      // Try API call in background
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/rooms/${room.id}/comments/${commentId}/vote`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ voteType: "like" }),
+          }
+        );
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log("Like successful:", result);
+        }
+      } catch (apiError) {
+        console.log("API vote failed, already updated locally");
+      }
+    } catch (error) {
+      console.error("Error liking comment:", error);
+    }
+  };
+
+  // Update the handleDislikeComment function to immediately update the UI
+  const handleDislikeComment = async (commentId: string | number) => {
+    try {
+      // Find the comment and update it optimistically
+      const updatedComments = displayComments.map((comment) => {
+        if (comment.id === commentId) {
+          return { ...comment, dislikes: comment.dislikes + 1 };
+        }
+        return comment;
+      });
+
+      // Update localStorage immediately
+      const savedComments = localStorage.getItem("roomComments");
+      if (savedComments) {
+        const allComments = JSON.parse(savedComments);
+        allComments[room.id] = updatedComments;
+        localStorage.setItem("roomComments", JSON.stringify(allComments));
+      }
+
+      // Trigger parent component to reload comments from localStorage
+      if (onAddComment) {
+        onAddComment(room.id, { text: "", rating: 0 });
+      }
+
+      // Try API call in background
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/rooms/${room.id}/comments/${commentId}/vote`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ voteType: "dislike" }),
+          }
+        );
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log("Dislike successful:", result);
+        }
+      } catch (apiError) {
+        console.log("API vote failed, already updated locally");
+      }
+    } catch (error) {
+      console.error("Error disliking comment:", error);
+    }
+  };
+
+  // Add a deleteComment function after the handleDislikeComment function
+  const handleDeleteComment = async (commentId: string | number) => {
+    try {
+      // Confirm deletion
+      if (!confirm("Apakah Anda yakin ingin menghapus komentar ini?")) {
+        return;
+      }
+
+      // Update localStorage immediately
+      const updatedComments = displayComments.filter(
+        (comment) => comment.id !== commentId
+      );
+      const savedComments = localStorage.getItem("roomComments");
+      if (savedComments) {
+        const allComments = JSON.parse(savedComments);
+        allComments[room.id] = updatedComments;
+        localStorage.setItem("roomComments", JSON.stringify(allComments));
+      }
+
+      // Trigger parent component to reload comments from localStorage
+      if (onAddComment) {
+        onAddComment(room.id, { text: "", rating: 0 });
+      }
+
+      // Try API call in background
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/rooms/${room.id}/comments/${commentId}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        if (response.ok) {
+          console.log("Comment deleted successfully from API");
+        }
+      } catch (apiError) {
+        console.log("API delete failed, already updated locally");
+      }
+
+      console.log("Comment deleted locally");
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+    }
   };
 
   // Render stars for rating
@@ -484,17 +634,37 @@ export default function ListDetailPopup({
                   className="border border-gray-200 rounded-lg p-4"
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center">
-                      <span className="font-medium text-black mr-2">
-                        {typeof comment.user === "string" &&
-                        (comment.user.startsWith("Bu") ||
-                          comment.user.startsWith("Da"))
-                          ? comment.user.substring(0, 2)
-                          : comment.user.substring(0, 2)}
-                      </span>
-                      <span className="text-black">{comment.user}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        {typeof comment.user === "string"
+                          ? comment.user.substring(0, 2).toUpperCase()
+                          : (
+                              comment.user?.fullName ||
+                              comment.user?.username ||
+                              "U"
+                            )
+                              .substring(0, 2)
+                              .toUpperCase()}
+                      </div>
+                      <div>
+                        <span className="font-medium text-black">
+                          {typeof comment.user === "string"
+                            ? comment.user
+                            : comment.user?.fullName ||
+                              comment.user?.username ||
+                              "User"}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {renderStars(comment.rating)}
+                          <span className="text-sm text-gray-500">
+                            ({comment.rating}/5)
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    {renderStars(comment.rating)}
+                    <span className="text-sm text-gray-500">
+                      {comment.date || comment.timestamp}
+                    </span>
                   </div>
 
                   <p className="text-black mb-3">
@@ -503,21 +673,27 @@ export default function ListDetailPopup({
 
                   <div className="flex justify-between items-center">
                     <div className="flex items-center space-x-4">
-                      <button className="flex items-center text-gray-500 hover:text-gray-700">
+                      <button
+                        className="flex items-center text-gray-500 hover:text-green-600 transition-colors"
+                        onClick={() => handleLikeComment(comment.id)}
+                      >
                         <ThumbsUp className="h-4 w-4 mr-1" />
                         <span>{comment.likes}</span>
                       </button>
-                      <button className="flex items-center text-gray-500 hover:text-gray-700">
+                      <button
+                        className="flex items-center text-gray-500 hover:text-red-600 transition-colors"
+                        onClick={() => handleDislikeComment(comment.id)}
+                      >
                         <ThumbsDown className="h-4 w-4 mr-1" />
                         <span>{comment.dislikes}</span>
                       </button>
                     </div>
 
                     <div className="flex items-center">
-                      <span className="text-gray-500 text-sm mr-2">
-                        {comment.date || comment.timestamp}
-                      </span>
-                      <button className="text-red-500 hover:text-red-700">
+                      <button
+                        className="text-red-500 hover:text-red-700"
+                        onClick={() => handleDeleteComment(comment.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>

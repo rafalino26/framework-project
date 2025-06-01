@@ -1,13 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { X, Star, MessageSquare, ThumbsUp, ThumbsDown } from "lucide-react";
+import {
+  X,
+  Star,
+  MessageSquare,
+  ThumbsUp,
+  ThumbsDown,
+  Trash2,
+} from "lucide-react";
 import CommentPopup from "./CommentPopup";
 
 // Update the Comment type to be compatible with the one in RoomContent.tsx
 type Comment = {
   id: string | number;
-  user: string;
+  user: string | { fullName?: string; username?: string };
   text?: string;
   comment?: string;
   rating: number;
@@ -50,6 +57,10 @@ export default function DetailRoomPopup({
 }: DetailRoomPopupProps) {
   const [isCommentPopupOpen, setIsCommentPopupOpen] = useState(false);
 
+  // Add this logging to see what facilities are being received
+  console.log("DetailRoomPopup - Room facilities:", room.facilities);
+  console.log("DetailRoomPopup - Full room data:", room);
+
   const renderStars = (rating: number) => {
     return (
       <div className="flex items-center">
@@ -73,6 +84,150 @@ export default function DetailRoomPopup({
 
     // Close the popup
     setIsCommentPopupOpen(false);
+  };
+
+  // Update the handleLikeComment function to immediately update the UI
+  const handleLikeComment = async (commentId: string | number) => {
+    try {
+      // Find the comment and update it optimistically
+      const updatedComments = comments.map((comment) => {
+        if (comment.id === commentId) {
+          return { ...comment, likes: comment.likes + 1 };
+        }
+        return comment;
+      });
+
+      // Update localStorage immediately
+      const savedComments = localStorage.getItem("roomComments");
+      if (savedComments) {
+        const allComments = JSON.parse(savedComments);
+        allComments[room.id] = updatedComments;
+        localStorage.setItem("roomComments", JSON.stringify(allComments));
+      }
+
+      // Trigger parent component to reload comments from localStorage
+      if (onAddComment) {
+        onAddComment(room.id, { text: "", rating: 0 });
+      }
+
+      // Try API call in background
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/rooms/${room.id}/comments/${commentId}/vote`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ voteType: "like" }),
+          }
+        );
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log("Like successful:", result);
+        }
+      } catch (apiError) {
+        console.log("API vote failed, already updated locally");
+      }
+    } catch (error) {
+      console.error("Error liking comment:", error);
+    }
+  };
+
+  // Update the handleDislikeComment function to immediately update the UI
+  const handleDislikeComment = async (commentId: string | number) => {
+    try {
+      // Find the comment and update it optimistically
+      const updatedComments = comments.map((comment) => {
+        if (comment.id === commentId) {
+          return { ...comment, dislikes: comment.dislikes + 1 };
+        }
+        return comment;
+      });
+
+      // Update localStorage immediately
+      const savedComments = localStorage.getItem("roomComments");
+      if (savedComments) {
+        const allComments = JSON.parse(savedComments);
+        allComments[room.id] = updatedComments;
+        localStorage.setItem("roomComments", JSON.stringify(allComments));
+      }
+
+      // Trigger parent component to reload comments from localStorage
+      if (onAddComment) {
+        onAddComment(room.id, { text: "", rating: 0 });
+      }
+
+      // Try API call in background
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/rooms/${room.id}/comments/${commentId}/vote`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ voteType: "dislike" }),
+          }
+        );
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log("Dislike successful:", result);
+        }
+      } catch (apiError) {
+        console.log("API vote failed, already updated locally");
+      }
+    } catch (error) {
+      console.error("Error disliking comment:", error);
+    }
+  };
+
+  // Add a delete comment function
+  const handleDeleteComment = async (commentId: string | number) => {
+    try {
+      // Confirm deletion
+      if (!confirm("Apakah Anda yakin ingin menghapus komentar ini?")) {
+        return;
+      }
+
+      // Try to call API first
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/rooms/${room.id}/comments/${commentId}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        if (response.ok) {
+          console.log("Comment deleted successfully from API");
+        }
+      } catch (apiError) {
+        console.log("API delete failed, updating locally");
+      }
+
+      // Update local state regardless of API success
+      const updatedComments = comments.filter(
+        (comment) => comment.id !== commentId
+      );
+
+      // Update localStorage
+      const savedComments = localStorage.getItem("roomComments");
+      if (savedComments) {
+        const allComments = JSON.parse(savedComments);
+        allComments[room.id] = updatedComments;
+        localStorage.setItem("roomComments", JSON.stringify(allComments));
+      }
+
+      // Force re-render by updating parent component
+      if (onAddComment) {
+        // This is a hack to trigger a re-render in the parent component
+        onAddComment(room.id, { text: "", rating: 0 });
+      }
+
+      // Show notification
+      console.log("Comment deleted locally");
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+    }
   };
 
   if (!isOpen) return null;
@@ -187,11 +342,35 @@ export default function DetailRoomPopup({
                     className="p-4 border border-gray-200 rounded-lg"
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h4 className="font-medium text-black">
-                          {comment.user}
-                        </h4>
-                        {renderStars(comment.rating)}
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                          <span className="text-sm font-medium">
+                            {typeof comment.user === "string"
+                              ? comment.user.substring(0, 2).toUpperCase()
+                              : (
+                                  comment.user?.fullName ||
+                                  comment.user?.username ||
+                                  "U"
+                                )
+                                  .substring(0, 2)
+                                  .toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-black">
+                            {typeof comment.user === "string"
+                              ? comment.user
+                              : comment.user?.fullName ||
+                                comment.user?.username ||
+                                "User"}
+                          </h4>
+                          <div className="flex items-center gap-2">
+                            {renderStars(comment.rating)}
+                            <span className="text-sm text-gray-500">
+                              ({comment.rating}/5)
+                            </span>
+                          </div>
+                        </div>
                       </div>
                       <span className="text-sm text-gray-500">
                         {comment.date || comment.timestamp}
@@ -204,15 +383,27 @@ export default function DetailRoomPopup({
 
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-4 text-sm text-gray-500">
-                        <button className="flex items-center gap-1 hover:text-black">
+                        <button
+                          className="flex items-center gap-1 hover:text-green-600 transition-colors"
+                          onClick={() => handleLikeComment(comment.id)}
+                        >
                           <ThumbsUp className="h-4 w-4" />
                           <span>{comment.likes}</span>
                         </button>
-                        <button className="flex items-center gap-1 hover:text-black">
+                        <button
+                          className="flex items-center gap-1 hover:text-red-600 transition-colors"
+                          onClick={() => handleDislikeComment(comment.id)}
+                        >
                           <ThumbsDown className="h-4 w-4" />
                           <span>{comment.dislikes}</span>
                         </button>
                       </div>
+                      <button
+                        className="text-red-500 hover:text-red-700 transition-colors"
+                        onClick={() => handleDeleteComment(comment.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 ))
