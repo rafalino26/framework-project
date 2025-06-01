@@ -9,7 +9,7 @@ const pageTitles: Record<string, string> = {
   "/admindashboard/room": "Ruangan (Admin)",
   "/admindashboard/schedule": "Jadwal (Admin)",
   "/admindashboard/reservasi": "Reservasi (Admin)",
-  "/admindashboard/editor-profile": "Edit Profil (Admin)",
+  "/admindashboard/editor-profile": "Lihat Profil (Admin)",
 };
 
 export default function DashboardLayout({

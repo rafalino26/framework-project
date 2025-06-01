@@ -37,3 +37,13 @@ export async function registerUser(userData: {
     );
   }
 }
+
+export async function logoutUser() {
+  try {
+    const response = await api.post("/auth/logout", {}, { withCredentials: true });
+    return response.data;
+  } catch (error: any) {
+    console.error("Logout error:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || "Logout Failed");
+  }
+}

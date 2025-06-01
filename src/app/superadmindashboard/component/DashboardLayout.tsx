@@ -9,7 +9,7 @@ const pageTitles: Record<string, string> = {
   "/superadmindashboard/room": "Ruangan (Super Admin)",
   "/superadmindashboard/schedule": "Jadwal (Super Admin)",
   "/superadmindashboard/reservasi": "Reservasi (Super Admin)",
-  "/superadmindashboard/editor-profile": "Edit Profil (Super Admin)",
+  "/superadmindashboard/editor-profile": "Lihat Profil (Super Admin)",
   "/superadmindashboard/pengguna": "Manajemen Pengguna (Super Admin)"
 };
 

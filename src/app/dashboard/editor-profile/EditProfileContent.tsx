@@ -1,73 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import api from "@/app/services/api";
 
-export default function EditProfileContent() {
-  const [name, setName] = useState("Kevin Rindengan");
-  const [email, setEmail] = useState("kevin@example.com");
-  const [bio, setBio] = useState("SARA is the best.");
-  const [avatar, setAvatar] = useState("/profilepict1.png");
+export default function ViewProfileContent() {
+  const [fullname, setFullname] = useState("");
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [avatar, setAvatar] = useState("/default-avatar.png");
+  const [loading, setLoading] = useState(true);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert(`Profile Updated: ${name}, ${email}, ${bio}`);
-  };
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get("/profile");
+        const data = res.data;
+
+        setFullname(data.fullname || "");
+        setEmail(data.email || "");
+        setUsername(data.username || "");
+        setAvatar("/default-avatar.png"); // Nanti bisa disesuaikan kalau ada avatar dari API
+      } catch (error) {
+        console.error("Gagal mengambil data profil:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  if (loading) return <div className="text-center mt-10">Loading profile...</div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-md mx-auto mt-10">
       {/* Avatar Section */}
-      <div className="flex items-center space-x-4">
-        <img
-          src={avatar}
-          alt="Avatar"
-          className="w-20 h-20 rounded-full border border-gray-300 object-cover"
-        />
-        <button className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800">
-          Change Avatar
-        </button>
+      <div className="flex flex-col items-center space-y-4">
+        <h2 className="text-xl text-gray-500 font-semibold">{fullname}</h2>
+        <p className="text-sm text-gray-500">@{username}</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Name Input */}
+      {/* Info Section */}
+      <div className="bg-white shadow-md rounded-lg p-6 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Full Name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="mt-1 p-3 w-full border rounded-md text-black"
-          />
+          <h3 className="text-sm text-gray-500">Full Name</h3>
+          <p className="text-base text-black">{fullname}</p>
         </div>
 
-        {/* Email Input */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 p-3 w-full border rounded-md text-black"
-          />
+          <h3 className="text-sm text-gray-500">Username</h3>
+          <p className="text-base text-black">{username}</p>
         </div>
 
-        {/* Bio Input */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">Bio</label>
-          <textarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            className="mt-1 p-3 w-full border rounded-md h-24 text-black"
-          />
+          <h3 className="text-sm text-gray-500">Email</h3>
+          <p className="text-base text-black">{email}</p>
         </div>
-
-        {/* Submit Button */}
-        <button
-          type="submit"
-          className="bg-black text-white px-5 py-3 rounded-md hover:bg-gray-800 w-full"
-        >
-          Save Changes
-        </button>
-      </form>
+      </div>
     </div>
   );
 }

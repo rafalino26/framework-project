@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { Menu, X } from "lucide-react";
 import { FiUser, FiLogOut } from "react-icons/fi";
+import { logoutUser } from "@/app/services/auth"
 
 const menuItems = [
   { label: "Dashboard", path: "/dashboard" },
@@ -18,6 +19,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   // Tutup dropdown kalau klik di luar
   useEffect(() => {
@@ -31,6 +33,16 @@ export default function Navbar() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+    const handleLogout = async () => {
+    try {
+      await logoutUser();
+      localStorage.removeItem("token");
+      router.push("/login");
+    } catch (error: any) {
+      alert("Gagal logout: " + error.message);
+    }
+  };
 
   return (
     <>
@@ -95,13 +107,13 @@ export default function Navbar() {
                   <FiUser className="w-5 h-5" />
                   Profil
                 </Link>
-                <Link
-                  href="/"
-                  className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                >
-                  <FiLogOut className="w-5 h-5" />
-                  Keluar
-                </Link>
+                <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"
+              >
+                <FiLogOut className="w-5 h-5" />
+                Keluar
+              </button>
               </div>
             </div>
           )}
@@ -174,14 +186,13 @@ export default function Navbar() {
       <FiUser className="w-4 h-4" />
       Profil
     </Link>
-    <Link
-      href="/"
-      className="flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-gray-100"
-      onClick={() => setOpen(false)}
+    <button
+    onClick={handleLogout}
+    className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"
     >
-      <FiLogOut className="w-4 h-4" />
-      Keluar
-    </Link>
+    <FiLogOut className="w-5 h-5" />
+    Keluar
+    </button>
   </div>
 </div>
 
