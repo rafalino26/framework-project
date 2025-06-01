@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { X, Printer, Calendar } from "lucide-react";
+import { X, Printer, Download, Calendar } from "lucide-react";
 
 type Schedule = {
   day: string;
@@ -21,6 +21,8 @@ type PrintPopupProps = {
   onClose: () => void;
   room: {
     id: string;
+    roomCode?: string;
+    roomName?: string;
     course: string;
     lecturer: string;
     time: string;
@@ -145,11 +147,16 @@ export default function PrintPopup({ isOpen, onClose, room }: PrintPopupProps) {
     }, 250);
   };
 
+  // Handle download as PDF (simulated by printing)
+  const handleDownload = () => {
+    handlePrint();
+  };
+
   if (!isOpen) return null;
 
   return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-5xl mx-2 border border-gray-200 shadow-lg max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-5xl mx-4 border border-gray-200 shadow-lg max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold">Jadwal Ruangan {room.id}</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-black">
@@ -159,6 +166,18 @@ export default function PrintPopup({ isOpen, onClose, room }: PrintPopupProps) {
 
         <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
+            <p className="text-gray-600">
+              Ruangan:{" "}
+              <span className="font-medium text-black">
+                {room.roomCode || room.id}
+              </span>
+              {room.roomName && room.roomName !== room.id && (
+                <span className="font-medium text-black">
+                  {" "}
+                  - {room.roomName}
+                </span>
+              )}
+            </p>
             <p className="text-gray-600">
               Kapasitas:{" "}
               <span className="font-medium text-black">
@@ -175,10 +194,17 @@ export default function PrintPopup({ isOpen, onClose, room }: PrintPopupProps) {
           <div className="flex gap-2 w-full sm:w-auto">
             <button
               onClick={handlePrint}
-              className="flex items-center justify-center px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition flex-1 sm:flex-initial"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition flex-1 sm:flex-initial"
             >
               <Printer className="h-4 w-4" />
               <span>Cetak</span>
+            </button>
+            <button
+              onClick={handleDownload}
+              className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition flex-1 sm:flex-initial"
+            >
+              <Download className="h-4 w-4" />
+              <span>Unduh PDF</span>
             </button>
           </div>
         </div>
@@ -186,7 +212,10 @@ export default function PrintPopup({ isOpen, onClose, room }: PrintPopupProps) {
         <div ref={contentRef}>
           <div className="print-header mb-6">
             <h1 className="text-2xl font-bold text-center">
-              Jadwal Ruangan {room.id}
+              Jadwal Ruangan {room.roomCode || room.id}
+              {room.roomName &&
+                room.roomName !== room.id &&
+                ` - ${room.roomName}`}
             </h1>
             <p className="text-center text-gray-600">
               Semester Ganjil 2023/2024
@@ -194,7 +223,7 @@ export default function PrintPopup({ isOpen, onClose, room }: PrintPopupProps) {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-[600px] w-full border-collapse table-fixed">
+            <table className="w-full border-collapse min-w-full table-fixed">
               <thead>
                 <tr className="bg-gray-100">
                   <th className="py-3 px-4 text-left font-medium text-gray-700 border border-gray-200 w-[15%]">

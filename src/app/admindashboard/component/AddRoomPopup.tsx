@@ -18,18 +18,29 @@ export default function AddRoomPopup({
 }: AddRoomPopupProps) {
   const [formData, setFormData] = useState({
     id: "",
+    roomName: "",
     capacity: "",
     status: "Kosong",
-    facilities: "",
+    facilities: "", // Start with empty string instead of default values
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Process facilities properly
+    const facilitiesArray = formData.facilities
+      ? formData.facilities
+          .split(",")
+          .map((f) => f.trim())
+          .filter(Boolean)
+      : [];
+
     onAddRoom({
       id: formData.id,
+      roomName: formData.roomName || formData.id,
       capacity: Number(formData.capacity),
       status: formData.status,
-      facilities: formData.facilities.split(",").map((f) => f.trim()),
+      facilities: facilitiesArray,
       course: "-",
       lecturer: "-",
       time: "-",
@@ -41,7 +52,7 @@ export default function AddRoomPopup({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 border border-gray-200 shadow-lg">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Tambah Ruangan Baru</h2>
@@ -65,6 +76,21 @@ export default function AddRoomPopup({
                   setFormData({ ...formData, id: e.target.value })
                 }
                 placeholder="JTE-XXX"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Nama Ruangan
+              </label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border border-gray-200 rounded-md"
+                value={formData.roomName}
+                onChange={(e) =>
+                  setFormData({ ...formData, roomName: e.target.value })
+                }
+                placeholder="Nama ruangan (opsional)"
               />
             </div>
 

@@ -4,18 +4,23 @@ import { useState } from "react";
 import { X, Star, MessageSquare, ThumbsUp, ThumbsDown } from "lucide-react";
 import CommentPopup from "./CommentPopup";
 
+// Update the Comment type to be compatible with the one in RoomContent.tsx
 type Comment = {
-  id: number;
+  id: string | number;
   user: string;
+  text?: string;
+  comment?: string;
   rating: number;
-  comment: string;
   likes: number;
   dislikes: number;
-  timestamp: string;
+  date?: string;
+  timestamp?: string;
 };
 
 type RoomDetails = {
   id: string;
+  roomCode?: string;
+  roomName?: string;
   course: string;
   lecturer: string;
   time: string;
@@ -33,6 +38,7 @@ type DetailRoomPopupProps = {
     roomId: string,
     comment: { text: string; rating: number }
   ) => void;
+  comments?: Comment[];
 };
 
 export default function DetailRoomPopup({
@@ -40,28 +46,9 @@ export default function DetailRoomPopup({
   onClose,
   room,
   onAddComment,
+  comments = [],
 }: DetailRoomPopupProps) {
   const [isCommentPopupOpen, setIsCommentPopupOpen] = useState(false);
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: 1,
-      user: "John Doe",
-      rating: 4,
-      comment: "Ruangan nyaman dengan AC yang berfungsi baik",
-      likes: 12,
-      dislikes: 2,
-      timestamp: "3 jam lalu",
-    },
-    {
-      id: 2,
-      user: "Jane Smith",
-      rating: 3,
-      comment: "Proyektor kadang mati sendiri",
-      likes: 5,
-      dislikes: 1,
-      timestamp: "1 hari lalu",
-    },
-  ]);
 
   const renderStars = (rating: number) => {
     return (
@@ -79,19 +66,6 @@ export default function DetailRoomPopup({
   };
 
   const handleAddComment = (commentData: { text: string; rating: number }) => {
-    // Add to local state
-    const newComment: Comment = {
-      id: comments.length + 1,
-      user: "Anda",
-      rating: commentData.rating,
-      comment: commentData.text,
-      likes: 0,
-      dislikes: 0,
-      timestamp: "Baru saja",
-    };
-
-    setComments([newComment, ...comments]);
-
     // Call the parent handler if provided
     if (onAddComment) {
       onAddComment(room.id, commentData);
@@ -120,6 +94,18 @@ export default function DetailRoomPopup({
           <div className="min-w-[300px] space-y-4">
             <h3 className="text-lg font-semibold">Informasi Ruangan</h3>
             <div className="space-y-3">
+              <div>
+                <p className="font-semibold text-gray-600">Kode Ruangan</p>
+                <p className="text-black">{room.roomCode || room.id}</p>
+              </div>
+
+              {room.roomName && room.roomName !== room.id && (
+                <div>
+                  <p className="font-semibold text-gray-600">Nama Ruangan</p>
+                  <p className="text-black">{room.roomName}</p>
+                </div>
+              )}
+
               <div>
                 <p className="font-semibold text-gray-600">Mata Kuliah</p>
                 <p className="text-black">{room.course}</p>
@@ -190,37 +176,47 @@ export default function DetailRoomPopup({
             </div>
 
             <div className="space-y-4 overflow-y-auto flex-1 pr-2 max-h-[40vh] md:max-h-none">
-              {comments.map((comment) => (
-                <div
-                  key={comment.id}
-                  className="p-4 border border-gray-200 rounded-lg"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h4 className="font-medium text-black">{comment.user}</h4>
-                      {renderStars(comment.rating)}
-                    </div>
-                    <span className="text-sm text-gray-500">
-                      {comment.timestamp}
-                    </span>
-                  </div>
-
-                  <p className="text-black mb-3">{comment.comment}</p>
-
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <button className="flex items-center gap-1 hover:text-black">
-                        <ThumbsUp className="h-4 w-4" />
-                        <span>{comment.likes}</span>
-                      </button>
-                      <button className="flex items-center gap-1 hover:text-black">
-                        <ThumbsDown className="h-4 w-4" />
-                        <span>{comment.dislikes}</span>
-                      </button>
-                    </div>
-                  </div>
+              {comments.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  Belum ada komentar untuk ruangan ini
                 </div>
-              ))}
+              ) : (
+                comments.map((comment) => (
+                  <div
+                    key={comment.id}
+                    className="p-4 border border-gray-200 rounded-lg"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h4 className="font-medium text-black">
+                          {comment.user}
+                        </h4>
+                        {renderStars(comment.rating)}
+                      </div>
+                      <span className="text-sm text-gray-500">
+                        {comment.date || comment.timestamp}
+                      </span>
+                    </div>
+
+                    <p className="text-black mb-3">
+                      {comment.text || comment.comment}
+                    </p>
+
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <button className="flex items-center gap-1 hover:text-black">
+                          <ThumbsUp className="h-4 w-4" />
+                          <span>{comment.likes}</span>
+                        </button>
+                        <button className="flex items-center gap-1 hover:text-black">
+                          <ThumbsDown className="h-4 w-4" />
+                          <span>{comment.dislikes}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
