@@ -55,25 +55,35 @@ export default function AddSchedulePopup({
     return nextDay.toISOString().slice(0, 10);
   }
 
-  useEffect(() => {
-    if (isOpen) {
-      setLoadingRooms(true);
-      api
-        .get("/schedule")
-        .then((res) => {
-          const schedules: ScheduleItem[] = res.data;
-          const uniqueRooms = Array.from(
-            new Set(schedules.map((s) => s.room_code))
-          );
-          setRooms(uniqueRooms);
-          setLoadingRooms(false);
-        })
-        .catch(() => {
-          setErrorRooms("Gagal mengambil data ruangan");
-          setLoadingRooms(false);
-        });
-    }
-  }, [isOpen]);
+useEffect(() => {
+  if (isOpen) {
+    setLoadingRooms(true);
+    type Room = {
+      roomId: string;
+      roomCode: string;
+      roomName: string;
+      status: string;
+      capacity: number;
+      rating: number;
+      courseName: string | null;
+      lecturerName: string | null;
+      scheduleStartTime: string | null;
+      scheduleEndTime: string | null;
+    };
+    api
+      .get<Room[]>("/rooms/current-status")
+      .then((res) => {
+        const roomCodes = res.data.map((room) => room.roomCode);
+        const uniqueRoomCodes = Array.from(new Set(roomCodes));
+        setRooms(uniqueRoomCodes);
+        setLoadingRooms(false);
+      })
+      .catch(() => {
+        setErrorRooms("Gagal mengambil data ruangan");
+        setLoadingRooms(false);
+      });
+  }
+}, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
