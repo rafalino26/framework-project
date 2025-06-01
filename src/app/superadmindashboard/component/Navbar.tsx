@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { Menu, X } from "lucide-react";
 import { FiUser, FiLogOut } from "react-icons/fi";
+import { logoutUser } from "@/app/services/auth";
 
 const menuItems = [
   { label: "Dashboard", path: "/superadmindashboard" },
@@ -16,6 +17,7 @@ const menuItems = [
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -32,6 +34,16 @@ export default function Navbar() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      localStorage.removeItem("token");
+      router.push("/login");
+    } catch (error: any) {
+      alert("Gagal logout: " + error.message);
+    }
+  };
 
   return (
     <>
@@ -90,19 +102,19 @@ export default function Navbar() {
               <hr className="border-gray-300" />
               <div className="flex flex-col">
                 <Link
-                  href="/admindashboard/editor-profile"
+                  href="/superadmindashboard/editor-profile"
                   className="flex items-center gap-2 px-4 py-2 text-sm text-black hover:bg-gray-100"
                 >
                   <FiUser className="w-5 h-5" />
                   Profil
                 </Link>
-                <Link
-                  href="/"
-                  className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                >
-                  <FiLogOut className="w-5 h-5" />
-                  Keluar
-                </Link>
+                <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"
+              >
+                <FiLogOut className="w-5 h-5" />
+                Keluar
+              </button>
               </div>
             </div>
           )}
@@ -158,33 +170,32 @@ export default function Navbar() {
           ))}
         </nav>
 
-{/* Profile Dropdown di Sidebar (Mobile) */}
-<div className="absolute bottom-4 left-4 w-[85%] text-xs">
-  {/* Garis pemisah */}
-  <hr className="border-gray-300 mb-2" />
+      {/* Profile Dropdown di Sidebar (Mobile) */}
+      <div className="absolute bottom-4 left-4 w-[85%] text-xs">
+        {/* Garis pemisah */}
+        <hr className="border-gray-300 mb-2" />
 
-  <p className="font-semibold text-black px-3 py-1">Nama Pengguna</p>
-  <p className="text-gray-500 px-3 pb-2">email@example.com</p>
+        <p className="font-semibold text-black px-3 py-1">Nama Pengguna</p>
+        <p className="text-gray-500 px-3 pb-2">email@example.com</p>
 
-  <div className="flex flex-col">
-    <Link
-      href="/dashboard/editor-profile"
-      className="flex items-center gap-2 px-3 py-2 text-black hover:bg-gray-100"
-      onClick={() => setOpen(false)}
-    >
-      <FiUser className="w-4 h-4" />
-      Profil
-    </Link>
-    <Link
-      href="/"
-      className="flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-gray-100"
-      onClick={() => setOpen(false)}
-    >
-      <FiLogOut className="w-4 h-4" />
-      Keluar
-    </Link>
-  </div>
-</div>
+        <div className="flex flex-col">
+          <Link
+            href="/dashboard/editor-profile"
+            className="flex items-center gap-2 px-3 py-2 text-black hover:bg-gray-100"
+            onClick={() => setOpen(false)}
+          >
+            <FiUser className="w-4 h-4" />
+            Profil
+          </Link>
+           <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-gray-100 w-full text-left"
+        >
+          <FiLogOut className="w-4 h-4" />
+          Keluar
+        </button>
+        </div>
+      </div>
 
       </div>
     </>
