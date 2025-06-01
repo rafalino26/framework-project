@@ -1,29 +1,22 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { FiChevronDown } from "react-icons/fi"
 import { FaBook, FaUser, FaClock, FaMapMarkerAlt, FaCalendarAlt } from "react-icons/fa";
 import AddSchedulePopup from "../component/AddSchedulePopup";
 import PrintButton from "../component/PrintButton";
-
-const initialCourses = [
-  { id: "MK001", name: "Algoritma dan Pemrograman", lecturer: "Dr. Budi Santoso", time: "Senin, 08:00 - 10:30", room: "JTE-01", semester: "1", day: "Senin" },
-  { id: "MK002", name: "Basis Data", lecturer: "Prof. Siti Rahayu", time: "Selasa, 13:00 - 15:30", room: "JTE-02", semester: "2", day: "Selasa" },
-  { id: "MK003", name: "Jaringan Komputer", lecturer: "Dr. Ahmad Wijaya", time: "Rabu, 10:00 - 12:30", room: "JTE-03", semester: "3", day: "Rabu" },
-  { id: "MK004", name: "Kecerdasan Buatan", lecturer: "Dr. Maya Putri", time: "Kamis, 08:00 - 10:30", room: "JTE-04", semester: "4", day: "Kamis" },
-  { id: "MK005", name: "Sistem Operasi", lecturer: "Prof. Darmawan", time: "Jumat, 13:00 - 15:30", room: "JTE-05", semester: "5", day: "Jumat" },
-  { id: "MK006", name: "Pemrograman Web", lecturer: "Prof. Darmawan", time: "Senin, 13:00 - 15:30", room: "JTE-05", semester: "6", day: "Senin" },
-  { id: "MK007", name: "Cyber Security", lecturer: "Prof. Darmawan", time: "Selasa, 13:00 - 15:30", room: "JTE-05", semester: "7", day: "Selasa" },
-  { id: "MK008", name: "Praktikum Cyber", lecturer: "Prof. Darmawan", time: "Rabu, 13:00 - 15:30", room: "JTE-05", semester: "8", day: "Rabu" },
-]
+import api from "@/app/services/api";
+import dayjs from "dayjs";
+import "dayjs/locale/id";
+dayjs.locale("id");
 
 export default function SchedulePage() {
-  const [courses, setCourses] = useState(initialCourses);
-  const [selectedCourses, setSelectedCourses] = useState<string[]>([])
-  const [semester, setSemester] = useState("all")
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState("courses"); 
-  const [isPopupOpen, setIsPopupOpen] = useState(false); 
+  const [courses, setCourses] = useState<any[]>([]);
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+  const [semester, setSemester] = useState("all");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("courses");
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
 
   const semesters = [
     { value: "all", label: "Semua Semester" },
@@ -35,7 +28,7 @@ export default function SchedulePage() {
     { value: "6", label: "Semester 6" },
     { value: "7", label: "Semester 7" },
     { value: "8", label: "Semester 8" },
-  ]
+  ];
 
   const days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
 
@@ -43,11 +36,44 @@ export default function SchedulePage() {
   const selectedCourseDetails = courses.filter((course) => selectedCourses.includes(course.id));
 
   const handleCourseToggle = (courseId: string) => {
-    setSelectedCourses((prev) => (prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId]))
-  }
+    setSelectedCourses((prev) =>
+      prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId]
+    );
+  };
 
-  const handleAddSchedule = (newSchedule: any) => {
-    setCourses((prev) => [...prev, newSchedule]);
+    const fetchSchedule = async () => {
+    try {
+      const response = await api.get("/schedule");
+      const data = response.data;
+
+      const formattedCourses = data.map((item: any) => {
+        const start = dayjs(item.schedule_start_time);
+        const end = dayjs(item.schedule_end_time);
+        return {
+          id: item.id,
+          name: item.course_name,
+          lecturer: item.lecturer_name ?? "Belum ada dosen",
+          time: `${start.format("dddd")}, ${start.format("HH:mm")} - ${end.format("HH:mm")}`,
+          room: item.room_code ?? item.room_name ?? "-",
+          semester: String(item.semester),
+          day: start.format("dddd"),
+        };
+      });
+
+      setCourses(formattedCourses);
+    } catch (error) {
+      console.error("Gagal memuat data jadwal:", error);
+    }
+  };
+
+  // Panggil fetchSchedule saat komponen mount
+  useEffect(() => {
+    fetchSchedule();
+  }, []);
+
+  // Setelah tambah jadwal, fetch ulang data supaya update UI langsung
+  const handleAddSchedule = async (newSchedule: any) => {
+    await fetchSchedule();
   };
 
   return (
@@ -80,7 +106,7 @@ export default function SchedulePage() {
                   className="px-4 py-2 text-sm text-black hover:bg-gray-100 cursor-pointer"
                 >
                   {s.label}
-                </div>
+                </div>  
               ))}
             </div>
           )}
@@ -122,7 +148,6 @@ export default function SchedulePage() {
             Jadwal
           </button>
         </div>
-
 {/* Tombol Cetak dan Tambah Jadwal */} 
 <div className="flex gap-2 ml-auto">
   {activeTab === "schedule" && selectedCourses.length > 0 && (
@@ -135,8 +160,6 @@ export default function SchedulePage() {
     + Tambah
   </button>
 </div>
-
-
         {/* Popup */}
         <AddSchedulePopup
           isOpen={isPopupOpen}

@@ -11,13 +11,17 @@ const api = axios.create({
 });
 
 api.interceptors.response.use(
-  (response) => response, 
+  (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const originalRequest = error.config;
+
+    // Cegah alert jika error berasal dari /auth/login
+    if (error.response?.status === 401 && !originalRequest.url.includes("/auth/login")) {
       alert("Session expired! Please log in again.");
       localStorage.removeItem("token");
       window.location.href = "/login"; 
     }
+
     return Promise.reject(error);
   }
 );
