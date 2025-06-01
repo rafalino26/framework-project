@@ -2,8 +2,26 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+import { HiEye, HiEyeOff } from "react-icons/hi";
 
 export default function RegisterPage() {
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleTogglePassword = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const handleSignUp = () => {
+    setIsLoading(true);
+    // Simulasi delay submit (contoh)
+    setTimeout(() => {
+      setIsLoading(false);
+      alert("Registered!"); // Ganti dengan aksi submit asli
+    }, 2000);
+  };
+
   return (
     <div className="flex min-h-screen bg-[#EDF0F2] items-center justify-center p-4 font-sans">
       <div className="bg-white w-11/12 md:w-5/6 lg:w-3/4 h-auto md:h-4/5 flex flex-col md:flex-row rounded-xl shadow-lg overflow-hidden">
@@ -34,7 +52,6 @@ export default function RegisterPage() {
             Let's get you all set up so you can verify your personal account.
           </p>
 
-          {/* Form (hanya tampilan, tidak berfungsi) */}
           <form>
             {/* Full Name */}
             <div>
@@ -86,14 +103,20 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Password */}
-            <div>
+            {/* Password with eye icon */}
+            <div className="relative">
               <label className="text-sm text-black">Password</label>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
-                className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200"
+                className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200 pr-10"
               />
+              <div
+                className="absolute right-3 top-9 cursor-pointer text-gray-600"
+                onClick={handleTogglePassword}
+              >
+                {showPassword ? <HiEyeOff size={20} /> : <HiEye size={20} />}
+              </div>
             </div>
 
             {/* Checkbox Agreement */}
@@ -104,12 +127,38 @@ export default function RegisterPage() {
               </label>
             </div>
 
-            {/* Sign Up Button */}
+            {/* Sign Up Button with loading */}
             <button
               type="button"
-              className="w-40 bg-[#101540] text-white p-2 rounded-2xl hover:bg-[#131313]"
+              onClick={handleSignUp}
+              className={`w-40 bg-[#101540] text-white p-2 rounded-2xl hover:bg-[#131313] flex items-center justify-center ${
+                isLoading ? "opacity-70 cursor-not-allowed" : ""
+              }`}
+              disabled={isLoading}
             >
-              Sign Up
+              {isLoading ? (
+                <svg
+                  className="animate-spin h-5 w-5 mr-2 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8z"
+                  ></path>
+                </svg>
+              ) : null}
+              {isLoading ? "Loading..." : "Sign Up"}
             </button>
           </form>
 

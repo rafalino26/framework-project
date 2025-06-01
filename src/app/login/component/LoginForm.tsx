@@ -4,39 +4,44 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { loginUser } from "@/app/services/auth";
+import { FaEye, FaEyeSlash, FaSpinner } from "react-icons/fa";
 
 export default function LoginPage() {
   const router = useRouter();
 
-  // State untuk menyimpan email dan password
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  // Akun Dummy
-  const users = [
-    { email: "admin@tes.com", password: "admin123", role: "admin" },
-    { email: "user@tes.com", password: "user123", role: "user" },
-    { email: "superadmin@tes.com", password: "superadmin123", role: "superadmin" },
-  ];
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
-  // Function untuk menangani login
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault(); // Mencegah reload halaman
+    if (!email || !password) {
+      setError("Email dan password wajib diisi.");
+      setLoading(false);
+      return;
+    }
 
-    // Cek apakah email & password cocok dengan akun dummy
-    const user = users.find((u) => u.email === email && u.password === password);
+    try {
+      const data = await loginUser(email, password);
+      const role = data.user.role;
 
-    if (user) {
-      // Redirect ke dashboard masing-masing
-      if (user.role === "admin") {
+      if (role === "admin") {
         router.push("/admindashboard");
-      } else if (user.role === "superadmin") {
+      } else if (role === "superadmin") {
         router.push("/superadmindashboard");
       } else {
         router.push("/dashboard");
       }
-    } else {
-      alert("Email atau password salah!");
+    } catch (err: any) {
+      setError(err.message || "Login gagal");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -51,6 +56,9 @@ export default function LoginPage() {
           </div>
 
           <p className="text-black text-sm mb-6">See your growth and get support!</p>
+{error && (
+  <p className="text-red-500 text-sm mb-4">{error}</p>
+)}
 
           {/* Form Login */}
           <form onSubmit={handleLogin}>
@@ -64,13 +72,21 @@ export default function LoginPage() {
             />
 
             <label className="text-sm font-medium text-black">Password*</label>
-            <input
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full p-2 pr-10 mt-1 mb-4 border rounded-md text-black bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              <div
+                className="absolute right-3 top-6.5 transform -translate-y-1/2 text-gray-600 cursor-pointer"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </div>
+            </div>
 
             <div className="flex justify-between items-center text-sm mb-4 text-black">
               <div>
@@ -84,9 +100,13 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full bg-[#101540] text-white p-2 rounded-2xl hover:bg-[#131313]"
+              className="w-full bg-[#101540] text-white p-2 rounded-2xl hover:bg-[#131313] flex items-center justify-center"
+              disabled={loading}
             >
-              Login
+              {loading ? (
+                <FaSpinner className="animate-spin mr-2" />
+              ) : null}
+              {loading ? "Loading..." : "Login"}
             </button>
           </form>
 
