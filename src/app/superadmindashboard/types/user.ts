@@ -1,11 +1,9 @@
 export interface User {
-    id: string;
-    name: string;
-    username: string;
-    email: string;
-    nim: string;
-    role: string;
-    status: string;
-    lastLogin: string;
-  }
-  
+  id: string;
+  fullName: string;
+  username: string;
+  email: string;
+  role: "regular" | "admin" | "superadmin";
+  lastSignInAt: string | null;
+  nim_nidn: string;
+}
