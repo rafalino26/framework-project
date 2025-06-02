@@ -247,6 +247,35 @@ const apiService = {
       throw error;
     }
   },
+
+  // Delete a room
+  async deleteRoom(roomCode: string): Promise<{ message: string }> {
+    try {
+      const response = await api.delete(`/rooms/${roomCode}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("API Error:", error);
+      throw new Error(error.response?.data?.message || "Failed to delete room");
+    }
+  },
+
+  // Delete a comment
+  async deleteComment(
+    roomCode: string,
+    commentId: string
+  ): Promise<{ message: string }> {
+    try {
+      const response = await api.delete(
+        `/rooms/${roomCode}/comments/${commentId}`
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("API Error:", error);
+      throw new Error(
+        error.response?.data?.message || "Failed to delete comment"
+      );
+    }
+  },
 };
 
 // Helper functions
@@ -530,12 +559,22 @@ export default function RuanganPage() {
     }
   };
 
-  const handleDeleteRoom = (roomCode: string) => {
-    // Note: Delete functionality would need to be implemented in the backend
-    // For now, we'll just show a message
-    showNotification("Fitur hapus ruangan belum tersedia", "info");
-    setShowDeleteConfirm(false);
-    setRoomToDelete(null);
+  const handleDeleteRoom = async (roomCode: string) => {
+    try {
+      await apiService.deleteRoom(roomCode);
+      // Remove the room from local state
+      setRooms((prevRooms) =>
+        prevRooms.filter((room) => room.roomCode !== roomCode)
+      );
+      showNotification(`Ruangan ${roomCode} berhasil dihapus`, "success");
+      setShowDeleteConfirm(false);
+      setRoomToDelete(null);
+    } catch (error: any) {
+      console.error("Error deleting room:", error);
+      showNotification(error.message || "Gagal menghapus ruangan", "error");
+      setShowDeleteConfirm(false);
+      setRoomToDelete(null);
+    }
   };
 
   const handleEditRoom = (room: Room) => {

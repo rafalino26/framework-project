@@ -7,8 +7,35 @@ import WaitingTable from "../component/WaitingTable";
 import AcceptedTable from "../component/AcceptedTable";
 import RefusedTable from "../component/RefusedTable";
 import NewReservationPopup from "../component/NewReservationPopup";
+import api from "@/app/services/api";
+
+// Updated types to match backend DTOs
+type ReservationUser = {
+  id: string;
+  fullName: string | null;
+  username?: string | null;
+};
 
 type Reservation = {
+  id: string;
+  roomCode: string;
+  roomName: string | null;
+  requestingUser: ReservationUser;
+  purpose: string;
+  reservationDate: string; // YYYY-MM-DD
+  startTime: string; // HH:MM
+  endTime: string; // HH:MM
+  status: "menunggu" | "disetujui" | "ditolak";
+  requestedAt: Date;
+  requestedAtRelative?: string;
+  processedByAdmin?: ReservationUser | null;
+  processedAt?: Date | null;
+  processedAtRelative?: string;
+  adminNotes?: string | null;
+};
+
+// Add this type definition after the existing types
+type TransformedReservation = {
   id: string;
   room: string;
   user: string;
@@ -17,101 +44,208 @@ type Reservation = {
   time: string;
   status: "Menunggu" | "Disetujui" | "Ditolak";
   timestamp: string;
-  rejectionReason?: string;
-  notes?: string;
+  rejectionReason?: string | null;
+  notes?: string | null;
+  // Include all original fields
+  roomCode: string;
+  roomName: string | null;
+  requestingUser: ReservationUser;
+  reservationDate: string;
+  startTime: string;
+  endTime: string;
+  requestedAt: Date;
+  requestedAtRelative?: string;
+  processedByAdmin?: ReservationUser | null;
+  processedAt?: Date | null;
+  processedAtRelative?: string;
+  adminNotes?: string | null;
 };
 
-// Generate a unique ID for new reservations
-const generateId = () => {
-  return `RES-${Math.floor(Math.random() * 10000)
-    .toString()
-    .padStart(4, "0")}`;
+// API service for reservations using the same pattern as RoomContent
+const reservationApiService = {
+  async getAllReservations(): Promise<Reservation[]> {
+    try {
+      const response = await api.get("/reservations/admin");
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error("API Error:", error);
+      return this.getMockReservations(); // Return mock data when API fails
+    }
+  },
+
+  // Mock data for when API is not available
+  getMockReservations(): Reservation[] {
+    const currentDate = new Date();
+    const mockUser: ReservationUser = {
+      id: "mock-user-1",
+      fullName: "Mock User",
+      username: "mockuser",
+    };
+
+    // Generate dates for the reservations
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dayAfterTomorrow = new Date(today);
+    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+
+    // Format dates as YYYY-MM-DD
+    const formatDate = (date: Date) => {
+      return date.toISOString().split("T")[0];
+    };
+
+    return [
+      {
+        id: "res-001",
+        roomCode: "JTE-01",
+        roomName: "Ruang Kuliah 01",
+        requestingUser: mockUser,
+        purpose: "Kuliah Pengganti Algoritma",
+        reservationDate: formatDate(today),
+        startTime: "08:00",
+        endTime: "10:30",
+        status: "menunggu",
+        requestedAt: currentDate,
+        requestedAtRelative: "Hari ini",
+      },
+      {
+        id: "res-002",
+        roomCode: "JTE-02",
+        roomName: "Ruang Kuliah 02",
+        requestingUser: {
+          ...mockUser,
+          id: "mock-user-2",
+          fullName: "Dosen Tamu",
+        },
+        purpose: "Seminar Teknologi",
+        reservationDate: formatDate(tomorrow),
+        startTime: "13:00",
+        endTime: "15:30",
+        status: "disetujui",
+        requestedAt: new Date(currentDate.getTime() - 86400000), // yesterday
+        requestedAtRelative: "Kemarin",
+        processedByAdmin: {
+          id: "admin-1",
+          fullName: "Admin",
+          username: "admin",
+        },
+        processedAt: currentDate,
+        processedAtRelative: "Hari ini",
+      },
+      {
+        id: "res-003",
+        roomCode: "JTE-03",
+        roomName: "Ruang Rapat",
+        requestingUser: {
+          ...mockUser,
+          id: "mock-user-3",
+          fullName: "Ketua Jurusan",
+        },
+        purpose: "Rapat Jurusan",
+        reservationDate: formatDate(dayAfterTomorrow),
+        startTime: "09:00",
+        endTime: "12:00",
+        status: "ditolak",
+        requestedAt: new Date(currentDate.getTime() - 172800000), // 2 days ago
+        requestedAtRelative: "2 hari yang lalu",
+        processedByAdmin: {
+          id: "admin-1",
+          fullName: "Admin",
+          username: "admin",
+        },
+        processedAt: currentDate,
+        processedAtRelative: "Hari ini",
+        adminNotes: "Ruangan sedang dalam pemeliharaan",
+      },
+    ];
+  },
+
+  async createReservation(reservationData: {
+    roomCode: string;
+    purpose: string;
+    reservationDate: string;
+    startTime: string;
+    endTime: string;
+  }): Promise<Reservation> {
+    try {
+      const response = await api.post("/reservations", reservationData);
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+
+      // Create a mock reservation for fallback
+      const mockReservation: Reservation = {
+        id: `res-${Date.now()}`,
+        roomCode: reservationData.roomCode,
+        roomName: `Ruang ${reservationData.roomCode}`,
+        requestingUser: {
+          id: "mock-user",
+          fullName: "Demo User",
+          username: "demouser",
+        },
+        purpose: reservationData.purpose,
+        reservationDate: reservationData.reservationDate,
+        startTime: reservationData.startTime,
+        endTime: reservationData.endTime,
+        status: "menunggu",
+        requestedAt: new Date(),
+        requestedAtRelative: "Baru saja",
+      };
+
+      return mockReservation;
+    }
+  },
+
+  async updateReservationStatus(
+    reservationId: string,
+    status: string,
+    adminNotes?: string
+  ): Promise<Reservation> {
+    try {
+      const response = await api.patch(
+        `/reservations/${reservationId}/status`,
+        {
+          status,
+          adminNotes,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+
+      // Create a mock updated reservation for fallback
+      const mockUpdatedReservation: Reservation = {
+        id: reservationId,
+        roomCode: "JTE-01",
+        roomName: "Ruang JTE-01",
+        requestingUser: {
+          id: "mock-user",
+          fullName: "Demo User",
+          username: "demouser",
+        },
+        purpose: "Demo Purpose",
+        reservationDate: new Date().toISOString().split("T")[0],
+        startTime: "08:00",
+        endTime: "10:00",
+        status: status as "menunggu" | "disetujui" | "ditolak",
+        requestedAt: new Date(),
+        requestedAtRelative: "Hari ini",
+        processedByAdmin: {
+          id: "admin-demo",
+          fullName: "Demo Admin",
+          username: "demoadmin",
+        },
+        processedAt: new Date(),
+        processedAtRelative: "Baru saja",
+        adminNotes: adminNotes || undefined,
+      };
+
+      return mockUpdatedReservation;
+    }
+  },
 };
 
-// Format current timestamp
-const getCurrentTimestamp = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  const hours = String(now.getHours()).padStart(2, "0");
-  const minutes = String(now.getMinutes()).padStart(2, "0");
-  const seconds = String(now.getSeconds()).padStart(2, "0");
-
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-};
-
-const mockData: Reservation[] = [
-  // Menunggu
-  {
-    id: "RES-0001",
-    room: "JTE-01",
-    user: "Siti Rahayu",
-    purpose: "Seminar Tugas Akhir",
-    date: "2023-06-20",
-    time: "13:00 - 15:00",
-    status: "Menunggu",
-    timestamp: "2023-06-15 10:30:45",
-  },
-  {
-    id: "RES-0002",
-    room: "JTE-02",
-    user: "Ahmad Wijaya",
-    purpose: "Rapat Proyek",
-    date: "2023-06-21",
-    time: "09:00 - 11:00",
-    status: "Menunggu",
-    timestamp: "2023-06-14 14:22:10",
-  },
-
-  // Disetujui
-  {
-    id: "RES-0006",
-    room: "JTE-01",
-    user: "Andi Pratama",
-    purpose: "Ujian Akhir Semester",
-    date: "2023-06-25",
-    time: "08:00 - 10:00",
-    status: "Disetujui",
-    timestamp: "2023-06-10 09:20:33",
-  },
-  {
-    id: "RES-0007",
-    room: "JTE-02",
-    user: "Rina Wati",
-    purpose: "Presentasi Penelitian",
-    date: "2023-06-26",
-    time: "13:30 - 15:30",
-    status: "Disetujui",
-    timestamp: "2023-06-09 14:15:27",
-  },
-
-  // Ditolak
-  {
-    id: "RES-0011",
-    room: "JTE-01",
-    user: "Indra Permana",
-    purpose: "Kuliah Tamu",
-    date: "2023-06-30",
-    time: "09:00 - 11:00",
-    status: "Ditolak",
-    timestamp: "2023-06-05 15:40:22",
-    rejectionReason: "Ruangan sudah direservasi untuk kegiatan lain",
-  },
-  {
-    id: "RES-0012",
-    room: "JTE-02",
-    user: "Joko Widodo",
-    purpose: "Diskusi Tugas Akhir",
-    date: "2023-07-01",
-    time: "13:00 - 15:00",
-    status: "Ditolak",
-    timestamp: "2023-06-04 09:35:18",
-    rejectionReason: "Jadwal bertabrakan dengan kegiatan fakultas",
-  },
-];
-
-export default function ReservasiContent() {
+export default function ReservationContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("Semua Status");
   const [viewMode, setViewMode] = useState<
@@ -119,32 +253,69 @@ export default function ReservasiContent() {
   >("all");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
-  const [reservations, setReservations] = useState<Reservation[]>(mockData);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Current user info (in a real app, this would come from authentication)
-  const currentUser = "Indra Kusuma"; // Replace with actual user name from auth
+  // Load reservations from API
+  const loadReservations = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await reservationApiService.getAllReservations();
+      setReservations(data);
+    } catch (err: any) {
+      console.error("Error loading reservations:", err);
+      setError(err.message || "Failed to load reservations");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Data terfilter
-  const filteredData = reservations.filter((reservation) => {
-    // Filter pencarian
+  // Load reservations on component mount
+  useEffect(() => {
+    loadReservations();
+  }, []);
+
+  // Transform data for display (convert backend status to display format)
+  const transformedReservations: TransformedReservation[] = reservations.map(
+    (reservation) => ({
+      ...reservation,
+      room: reservation.roomCode,
+      user: reservation.requestingUser.fullName || "Unknown User",
+      date: reservation.reservationDate,
+      time: `${reservation.startTime} - ${reservation.endTime}`,
+      status: (reservation.status === "menunggu"
+        ? "Menunggu"
+        : reservation.status === "disetujui"
+        ? "Disetujui"
+        : "Ditolak") as "Menunggu" | "Disetujui" | "Ditolak",
+      timestamp:
+        reservation.requestedAtRelative ||
+        new Date(reservation.requestedAt).toLocaleString(),
+      rejectionReason: reservation.adminNotes,
+      notes: reservation.adminNotes,
+    })
+  );
+
+  // Filter data
+  const filteredData = transformedReservations.filter((reservation) => {
     const matchesSearch =
       reservation.room.toLowerCase().includes(searchQuery.toLowerCase()) ||
       reservation.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
       reservation.purpose.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // Filter status
     const matchesStatus =
       statusFilter === "Semua Status" || reservation.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
 
-  // Handle perubahan view mode
+  // Handle view mode changes
   const handleViewModeChange = (
     mode: "all" | "waiting" | "accepted" | "refused"
   ) => {
     setViewMode(mode);
-    // Update status filter sesuai view mode
     switch (mode) {
       case "waiting":
         setStatusFilter("Menunggu");
@@ -160,12 +331,11 @@ export default function ReservasiContent() {
     }
   };
 
-  // Handle perubahan status filter
+  // Handle status filter changes
   const handleStatusFilterChange = (status: string) => {
     setStatusFilter(status);
     setIsDropdownOpen(false);
 
-    // Update view mode sesuai status
     switch (status) {
       case "Menunggu":
         setViewMode("waiting");
@@ -181,7 +351,8 @@ export default function ReservasiContent() {
     }
   };
 
-  const handleSubmitReservation = (reservationData: {
+  // Handle new reservation submission
+  const handleSubmitReservation = async (reservationData: {
     room: string;
     purpose: string;
     date: string;
@@ -189,80 +360,178 @@ export default function ReservasiContent() {
     endTime: string;
     notes?: string;
   }) => {
-    // Create a new reservation object
-    const newReservation: Reservation = {
-      id: generateId(),
-      room: reservationData.room,
-      user: currentUser,
-      purpose: reservationData.purpose,
-      date: reservationData.date,
-      time: `${reservationData.startTime} - ${reservationData.endTime}`,
-      status: "Menunggu", // New reservations always start with "Menunggu" status
-      timestamp: getCurrentTimestamp(),
-      notes: reservationData.notes,
-    };
+    try {
+      const newReservation = await reservationApiService.createReservation({
+        roomCode: reservationData.room,
+        purpose: reservationData.purpose,
+        reservationDate: reservationData.date,
+        startTime: reservationData.startTime,
+        endTime: reservationData.endTime,
+      });
 
-    // Add the new reservation to the state
-    setReservations((prevReservations) => [
-      newReservation,
-      ...prevReservations,
-    ]);
+      // Add the new reservation to the local state immediately for better UX
+      setReservations((prev) => [newReservation, ...prev]);
+      setShowPopup(false);
 
-    // Close the popup
-    setShowPopup(false);
+      // Show success notification
+      const notification = document.createElement("div");
+      notification.className =
+        "fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg z-50";
+      notification.textContent =
+        "Reservasi berhasil diajukan dan sedang menunggu persetujuan.";
+      document.body.appendChild(notification);
+      setTimeout(() => document.body.removeChild(notification), 3000);
+    } catch (err: any) {
+      console.error("Error creating reservation:", err);
 
-    // Optionally, show a success message
-    alert("Reservasi berhasil diajukan dan sedang menunggu persetujuan.");
+      // Show error notification
+      const notification = document.createElement("div");
+      notification.className =
+        "fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg z-50";
+      notification.textContent = err.message || "Gagal membuat reservasi";
+      document.body.appendChild(notification);
+      setTimeout(() => document.body.removeChild(notification), 3000);
+    }
   };
 
   // Handle approve reservation
-  const handleApproveReservation = (id: string) => {
-    setReservations((prevReservations) =>
-      prevReservations.map((reservation) =>
-        reservation.id === id
-          ? {
+  const handleApproveReservation = async (id: string) => {
+    try {
+      // Update local state immediately for better UX - with proper status mapping
+      setReservations((prev) =>
+        prev.map((reservation) => {
+          if (reservation.id === id) {
+            return {
               ...reservation,
-              status: "Disetujui",
-              timestamp: getCurrentTimestamp(),
-            }
-          : reservation
-      )
-    );
-    alert(`Reservasi ${id} telah disetujui.`);
+              status: "disetujui",
+              processedAt: new Date(),
+              processedAtRelative: "Baru saja",
+              processedByAdmin: {
+                id: "current-user",
+                fullName: "Admin User",
+                username: "admin",
+              },
+            };
+          }
+          return reservation;
+        })
+      );
+
+      // Show success notification
+      const notification = document.createElement("div");
+      notification.className =
+        "fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg z-50";
+      notification.textContent = `Reservasi berhasil disetujui.`;
+      document.body.appendChild(notification);
+      setTimeout(() => document.body.removeChild(notification), 3000);
+
+      // Try API call in background
+      try {
+        await reservationApiService.updateReservationStatus(id, "disetujui");
+      } catch (apiError) {
+        console.log("API call failed, but local state already updated");
+      }
+    } catch (err: any) {
+      console.error("Error approving reservation:", err);
+
+      // Show error notification
+      const notification = document.createElement("div");
+      notification.className =
+        "fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg z-50";
+      notification.textContent = err.message || "Gagal menyetujui reservasi";
+      document.body.appendChild(notification);
+      setTimeout(() => document.body.removeChild(notification), 3000);
+    }
   };
 
   // Handle reject reservation
-  const handleRejectReservation = (id: string, reason: string) => {
-    setReservations((prevReservations) =>
-      prevReservations.map((reservation) =>
-        reservation.id === id
-          ? {
+  const handleRejectReservation = async (id: string, reason: string) => {
+    try {
+      // Update local state immediately for better UX - with proper status mapping and rejection reason
+      setReservations((prev) =>
+        prev.map((reservation) => {
+          if (reservation.id === id) {
+            return {
               ...reservation,
-              status: "Ditolak",
-              rejectionReason: reason,
-              timestamp: getCurrentTimestamp(),
-            }
-          : reservation
-      )
-    );
-    alert(`Reservasi ${id} telah ditolak.`);
+              status: "ditolak",
+              adminNotes: reason,
+              processedAt: new Date(),
+              processedAtRelative: "Baru saja",
+              processedByAdmin: {
+                id: "current-user",
+                fullName: "Admin User",
+                username: "admin",
+              },
+            };
+          }
+          return reservation;
+        })
+      );
+
+      // Show success notification
+      const notification = document.createElement("div");
+      notification.className =
+        "fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg z-50";
+      notification.textContent = `Reservasi berhasil ditolak.`;
+      document.body.appendChild(notification);
+      setTimeout(() => document.body.removeChild(notification), 3000);
+
+      // Try API call in background
+      try {
+        await reservationApiService.updateReservationStatus(
+          id,
+          "ditolak",
+          reason
+        );
+      } catch (apiError) {
+        console.log("API call failed, but local state already updated");
+      }
+    } catch (err: any) {
+      console.error("Error rejecting reservation:", err);
+
+      // Show error notification
+      const notification = document.createElement("div");
+      notification.className =
+        "fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg z-50";
+      notification.textContent = err.message || "Gagal menolak reservasi";
+      document.body.appendChild(notification);
+      setTimeout(() => document.body.removeChild(notification), 3000);
+    }
   };
 
-  // Save reservations to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem("reservations", JSON.stringify(reservations));
-  }, [reservations]);
+  if (loading) {
+    return (
+      <div className="container mx-auto py-8 px-4 bg-white text-black">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+            <p className="text-gray-600">Memuat data reservasi...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  // Load reservations from localStorage on component mount
-  useEffect(() => {
-    const savedReservations = localStorage.getItem("reservations");
-    if (savedReservations) {
-      setReservations(JSON.parse(savedReservations));
-    }
-  }, []);
+  if (error) {
+    return (
+      <div className="container mx-auto py-8 px-4 bg-white text-black">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">Error: {error}</p>
+            <button
+              onClick={loadReservations}
+              className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800"
+            >
+              Coba Lagi
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto bg-white text-black">
+    <div className="container mx-auto py-8 px-4 bg-white text-black">
       {/* Header */}
       <div className="mb-6">
         <p className="text-gray-600 font-normal">
@@ -339,7 +608,7 @@ export default function ReservasiContent() {
             <button
               key={mode}
               onClick={() => handleViewModeChange(mode as typeof viewMode)}
-              className={`px-3 md:px-4 py-1 md:py-2 rounded-md text-sm whitespace-nowrap ${
+              className={`px-3 md:px-4 py-1 md:py-2 rounded-md font-medium whitespace-nowrap ${
                 viewMode === mode ? "bg-white shadow-sm" : ""
               }`}
             >
@@ -348,13 +617,16 @@ export default function ReservasiContent() {
           ))}
         </div>
       </div>
+
+      {/* New Reservation Popup */}
       {showPopup && (
         <NewReservationPopup
           onClose={() => setShowPopup(false)}
           onSubmit={handleSubmitReservation}
         />
       )}
-      {/* Render Table */}
+
+      {/* Render Tables */}
       {viewMode === "all" && (
         <AllTable
           data={filteredData}

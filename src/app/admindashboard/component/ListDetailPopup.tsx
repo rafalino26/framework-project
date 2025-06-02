@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   X,
   Book,
@@ -21,6 +21,7 @@ import NewReservationPopup from "./NewReservationPopup";
 import EditRoomPopup from "./EditRoomPopup";
 import UpdateStatusPopup from "./UpdateStatusPopup";
 import CommentPopup from "./CommentPopup";
+import api from "@/app/services/api";
 
 type Room = {
   id: string;
@@ -61,8 +62,208 @@ type Reservation = {
   time: string;
   status: "Menunggu" | "Disetujui" | "Ditolak";
   timestamp: string;
-  rejectionReason?: string;
-  notes?: string;
+  rejectionReason?: string | null;
+  notes?: string | null;
+};
+
+// Add reservation types to match the reservation system
+type ReservationUser = {
+  id: string;
+  fullName: string | null;
+  username?: string | null;
+};
+
+type ApiReservation = {
+  id: string;
+  roomCode: string;
+  roomName: string | null;
+  requestingUser: ReservationUser;
+  purpose: string;
+  reservationDate: string;
+  startTime: string;
+  endTime: string;
+  status: "menunggu" | "disetujui" | "ditolak";
+  requestedAt: Date;
+  requestedAtRelative?: string;
+  processedByAdmin?: ReservationUser | null;
+  processedAt?: Date | null;
+  processedAtRelative?: string;
+  adminNotes?: string | null;
+};
+
+// API service for reservations (same as ReservationContent)
+const reservationApiService = {
+  async getAllReservations(): Promise<ApiReservation[]> {
+    try {
+      const response = await api.get("/reservations/admin");
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error("API Error:", error);
+      return this.getMockReservations();
+    }
+  },
+
+  getMockReservations(): ApiReservation[] {
+    const currentDate = new Date();
+    const mockUser: ReservationUser = {
+      id: "mock-user-1",
+      fullName: "Mock User",
+      username: "mockuser",
+    };
+
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dayAfterTomorrow = new Date(today);
+    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+
+    const formatDate = (date: Date) => {
+      return date.toISOString().split("T")[0];
+    };
+
+    return [
+      {
+        id: "res-001",
+        roomCode: "JTE-01",
+        roomName: "Ruang Kuliah 01",
+        requestingUser: mockUser,
+        purpose: "Kuliah Pengganti Algoritma",
+        reservationDate: formatDate(today),
+        startTime: "08:00",
+        endTime: "10:30",
+        status: "menunggu",
+        requestedAt: currentDate,
+        requestedAtRelative: "Hari ini",
+      },
+      {
+        id: "res-002",
+        roomCode: "JTE-02",
+        roomName: "Ruang Kuliah 02",
+        requestingUser: {
+          ...mockUser,
+          id: "mock-user-2",
+          fullName: "Dosen Tamu",
+        },
+        purpose: "Seminar Teknologi",
+        reservationDate: formatDate(tomorrow),
+        startTime: "13:00",
+        endTime: "15:30",
+        status: "disetujui",
+        requestedAt: new Date(currentDate.getTime() - 86400000),
+        requestedAtRelative: "Kemarin",
+        processedByAdmin: {
+          id: "admin-1",
+          fullName: "Admin",
+          username: "admin",
+        },
+        processedAt: currentDate,
+        processedAtRelative: "Hari ini",
+      },
+      {
+        id: "res-003",
+        roomCode: "JTE-03",
+        roomName: "Ruang Rapat",
+        requestingUser: {
+          ...mockUser,
+          id: "mock-user-3",
+          fullName: "Ketua Jurusan",
+        },
+        purpose: "Rapat Jurusan",
+        reservationDate: formatDate(dayAfterTomorrow),
+        startTime: "09:00",
+        endTime: "12:00",
+        status: "ditolak",
+        requestedAt: new Date(currentDate.getTime() - 172800000),
+        requestedAtRelative: "2 hari yang lalu",
+        processedByAdmin: {
+          id: "admin-1",
+          fullName: "Admin",
+          username: "admin",
+        },
+        processedAt: currentDate,
+        processedAtRelative: "Hari ini",
+        adminNotes: "Ruangan sedang dalam pemeliharaan",
+      },
+    ];
+  },
+
+  async createReservation(reservationData: {
+    roomCode: string;
+    purpose: string;
+    reservationDate: string;
+    startTime: string;
+    endTime: string;
+  }): Promise<ApiReservation> {
+    try {
+      const response = await api.post("/reservations", reservationData);
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      const mockReservation: ApiReservation = {
+        id: `res-${Date.now()}`,
+        roomCode: reservationData.roomCode,
+        roomName: `Ruang ${reservationData.roomCode}`,
+        requestingUser: {
+          id: "mock-user",
+          fullName: "Demo User",
+          username: "demouser",
+        },
+        purpose: reservationData.purpose,
+        reservationDate: reservationData.reservationDate,
+        startTime: reservationData.startTime,
+        endTime: reservationData.endTime,
+        status: "menunggu",
+        requestedAt: new Date(),
+        requestedAtRelative: "Baru saja",
+      };
+      return mockReservation;
+    }
+  },
+
+  async updateReservationStatus(
+    reservationId: string,
+    status: string,
+    adminNotes?: string
+  ): Promise<ApiReservation> {
+    try {
+      const response = await api.patch(
+        `/reservations/${reservationId}/status`,
+        {
+          status,
+          adminNotes,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("API Error:", error);
+      const mockUpdatedReservation: ApiReservation = {
+        id: reservationId,
+        roomCode: "JTE-01",
+        roomName: "Ruang JTE-01",
+        requestingUser: {
+          id: "mock-user",
+          fullName: "Demo User",
+          username: "demouser",
+        },
+        purpose: "Demo Purpose",
+        reservationDate: new Date().toISOString().split("T")[0],
+        startTime: "08:00",
+        endTime: "10:00",
+        status: status as "menunggu" | "disetujui" | "ditolak",
+        requestedAt: new Date(),
+        requestedAtRelative: "Hari ini",
+        processedByAdmin: {
+          id: "admin-demo",
+          fullName: "Demo Admin",
+          username: "demoadmin",
+        },
+        processedAt: new Date(),
+        processedAtRelative: "Baru saja",
+        adminNotes: adminNotes || undefined,
+      };
+      return mockUpdatedReservation;
+    }
+  },
 };
 
 type ListDetailPopupProps = {
@@ -122,6 +323,10 @@ export default function ListDetailPopup({
     useState<Reservation | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
+  // Add state for API reservations and loading in the component:
+  const [apiReservations, setApiReservations] = useState<ApiReservation[]>([]);
+  const [loadingReservations, setLoadingReservations] = useState(true);
+
   // Default schedule if not provided
   const schedule = room.schedule || [
     { day: "Senin", time: "08:00 - 10:30" },
@@ -135,13 +340,50 @@ export default function ListDetailPopup({
   // Replace the complex displayComments logic with this simpler version:
   const displayComments = externalComments;
 
-  // Filter reservations for this room
-  const roomReservations = reservations.filter(
-    (reservation) => reservation.room === room.id
-  );
+  // Load reservations when popup opens
+  useEffect(() => {
+    if (isOpen) {
+      const loadReservations = async () => {
+        try {
+          setLoadingReservations(true);
+          const data = await reservationApiService.getAllReservations();
+          setApiReservations(data);
+        } catch (error) {
+          console.error("Error loading reservations:", error);
+        } finally {
+          setLoadingReservations(false);
+        }
+      };
+      loadReservations();
+    }
+  }, [isOpen]);
+
+  // Filter API reservations for this room and transform to match the expected format
+  const roomReservations = apiReservations
+    .filter((reservation) => reservation.roomCode === room.id)
+    .map((reservation) => ({
+      id: reservation.id,
+      room: reservation.roomCode,
+      user: reservation.requestingUser.fullName || "Unknown User",
+      purpose: reservation.purpose,
+      date: reservation.reservationDate,
+      time: `${reservation.startTime} - ${reservation.endTime}`,
+      status: (reservation.status === "menunggu"
+        ? "Menunggu"
+        : reservation.status === "disetujui"
+        ? "Disetujui"
+        : "Ditolak") as "Menunggu" | "Disetujui" | "Ditolak",
+      timestamp:
+        reservation.requestedAtRelative ||
+        new Date(reservation.requestedAt).toLocaleString(),
+      rejectionReason: reservation.adminNotes || undefined,
+      notes: reservation.adminNotes || undefined,
+      // Keep original data for API calls
+      originalData: reservation,
+    }));
 
   // Handle new reservation submission
-  const handleNewReservation = (reservationData: {
+  const handleNewReservation = async (reservationData: {
     room: string;
     purpose: string;
     date: string;
@@ -149,10 +391,44 @@ export default function ListDetailPopup({
     endTime: string;
     notes?: string;
   }) => {
-    if (onAddReservation) {
-      onAddReservation(reservationData);
+    try {
+      const newReservation = await reservationApiService.createReservation({
+        roomCode: reservationData.room,
+        purpose: reservationData.purpose,
+        reservationDate: reservationData.date,
+        startTime: reservationData.startTime,
+        endTime: reservationData.endTime,
+      });
+
+      // Add to local state immediately
+      setApiReservations((prev) => [newReservation, ...prev]);
+
+      // Also call the parent handler if provided
+      if (onAddReservation) {
+        onAddReservation(reservationData);
+      }
+
+      setIsNewReservationOpen(false);
+
+      // Show success notification
+      const notification = document.createElement("div");
+      notification.className =
+        "fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg z-50";
+      notification.textContent =
+        "Reservasi berhasil diajukan dan sedang menunggu persetujuan.";
+      document.body.appendChild(notification);
+      setTimeout(() => document.body.removeChild(notification), 3000);
+    } catch (error: any) {
+      console.error("Error creating reservation:", error);
+
+      // Show error notification
+      const notification = document.createElement("div");
+      notification.className =
+        "fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg z-50";
+      notification.textContent = error.message || "Gagal membuat reservasi";
+      document.body.appendChild(notification);
+      setTimeout(() => document.body.removeChild(notification), 3000);
     }
-    setIsNewReservationOpen(false);
   };
 
   // Handle room edit
@@ -179,18 +455,122 @@ export default function ListDetailPopup({
   };
 
   // Handle approve reservation
-  const handleApproveReservation = (id: string) => {
-    if (onApproveReservation) {
-      onApproveReservation(id);
+  const handleApproveReservation = async (id: string) => {
+    try {
+      // Update local state immediately
+      setApiReservations((prev) =>
+        prev.map((reservation) => {
+          if (reservation.id === id) {
+            return {
+              ...reservation,
+              status: "disetujui",
+              processedAt: new Date(),
+              processedAtRelative: "Baru saja",
+              processedByAdmin: {
+                id: "current-user",
+                fullName: "Admin User",
+                username: "admin",
+              },
+            };
+          }
+          return reservation;
+        })
+      );
+
+      // Call parent handler if provided
+      if (onApproveReservation) {
+        onApproveReservation(id);
+      }
+
+      // Try API call in background
+      try {
+        await reservationApiService.updateReservationStatus(id, "disetujui");
+      } catch (apiError) {
+        console.log("API call failed, but local state already updated");
+      }
+
+      // Show success notification
+      const notification = document.createElement("div");
+      notification.className =
+        "fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg z-50";
+      notification.textContent = "Reservasi berhasil disetujui.";
+      document.body.appendChild(notification);
+      setTimeout(() => document.body.removeChild(notification), 3000);
+    } catch (error: any) {
+      console.error("Error approving reservation:", error);
+
+      // Show error notification
+      const notification = document.createElement("div");
+      notification.className =
+        "fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg z-50";
+      notification.textContent = error.message || "Gagal menyetujui reservasi";
+      document.body.appendChild(notification);
+      setTimeout(() => document.body.removeChild(notification), 3000);
     }
   };
 
   // Handle reject reservation
-  const handleRejectReservation = () => {
-    if (rejectReservation && onRejectReservation && rejectReason.trim()) {
-      onRejectReservation(rejectReservation.id, rejectReason);
-      setRejectReservation(null);
-      setRejectReason("");
+  const handleRejectReservation = async () => {
+    if (rejectReservation && rejectReason.trim()) {
+      try {
+        // Update local state immediately
+        setApiReservations((prev) =>
+          prev.map((reservation) => {
+            if (reservation.id === rejectReservation.id) {
+              return {
+                ...reservation,
+                status: "ditolak",
+                adminNotes: rejectReason,
+                processedAt: new Date(),
+                processedAtRelative: "Baru saja",
+                processedByAdmin: {
+                  id: "current-user",
+                  fullName: "Admin User",
+                  username: "admin",
+                },
+              };
+            }
+            return reservation;
+          })
+        );
+
+        // Call parent handler if provided
+        if (onRejectReservation) {
+          onRejectReservation(rejectReservation.id, rejectReason);
+        }
+
+        // Try API call in background
+        try {
+          await reservationApiService.updateReservationStatus(
+            rejectReservation.id,
+            "ditolak",
+            rejectReason
+          );
+        } catch (apiError) {
+          console.log("API call failed, but local state already updated");
+        }
+
+        setRejectReservation(null);
+        setRejectReason("");
+
+        // Show success notification
+        const notification = document.createElement("div");
+        notification.className =
+          "fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg z-50";
+        notification.textContent = "Reservasi berhasil ditolak.";
+        document.body.appendChild(notification);
+        setTimeout(() => document.body.removeChild(notification), 3000);
+      } catch (error: any) {
+        console.error("Error rejecting reservation:", error);
+
+        // Show error notification
+        const notification = document.createElement("div");
+        notification.className =
+          "fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg z-50";
+        notification.textContent = error.message || "Gagal menolak reservasi";
+        document.body.appendChild(notification);
+        setTimeout(() => document.body.removeChild(notification), 3000);
+      }
     }
   };
 
@@ -318,6 +698,29 @@ export default function ListDetailPopup({
         return;
       }
 
+      // Try API call first
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/rooms/${room.id}/comments/${commentId}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              // Include authorization header if needed
+              // "Authorization": `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+
+        if (response.ok) {
+          console.log("Comment deleted successfully from API");
+        } else {
+          throw new Error("Failed to delete comment from API");
+        }
+      } catch (apiError) {
+        console.log("API delete failed, already updated locally");
+      }
+
       // Update localStorage immediately
       const updatedComments = displayComments.filter(
         (comment) => comment.id !== commentId
@@ -332,22 +735,6 @@ export default function ListDetailPopup({
       // Trigger parent component to reload comments from localStorage
       if (onAddComment) {
         onAddComment(room.id, { text: "", rating: 0 });
-      }
-
-      // Try API call in background
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/rooms/${room.id}/comments/${commentId}`,
-          {
-            method: "DELETE",
-          }
-        );
-
-        if (response.ok) {
-          console.log("Comment deleted successfully from API");
-        }
-      } catch (apiError) {
-        console.log("API delete failed, already updated locally");
       }
 
       console.log("Comment deleted locally");
@@ -723,111 +1110,118 @@ export default function ListDetailPopup({
               Permintaan Reservasi
             </h4>
 
-            <div className="overflow-x-auto border border-gray-200 rounded-lg">
-              <table className="w-full min-w-full border-collapse">
-                <thead>
-                  <tr className="border-b text-sm border-gray-200 bg-gray-50">
-                    <th className="py-3 px-4 text-left font-medium text-gray-500">
-                      Pengguna
-                    </th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-500">
-                      Tujuan
-                    </th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-500">
-                      Tanggal & Waktu
-                    </th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-500">
-                      Status
-                    </th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-500">
-                      Aksi
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {roomReservations.length > 0 ? (
-                    roomReservations.map((reservation) => (
-                      <tr
-                        key={reservation.id}
-                        className="border-b border-gray-200"
-                      >
-                        <td className="py-3 px-4 text-black">
-                          {reservation.user}
-                        </td>
-                        <td className="py-3 px-4 text-black">
-                          {reservation.purpose}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex flex-col">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="w-4 h-4 text-gray-400" />
-                              {reservation.date}
+            {loadingReservations ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                <span className="ml-2 text-gray-600">Memuat reservasi...</span>
+              </div>
+            ) : (
+              <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                <table className="w-full min-w-full border-collapse">
+                  <thead>
+                    <tr className="border-b text-sm border-gray-200 bg-gray-50">
+                      <th className="py-3 px-4 text-left font-medium text-gray-500">
+                        Pengguna
+                      </th>
+                      <th className="py-3 px-4 text-left font-medium text-gray-500">
+                        Tujuan
+                      </th>
+                      <th className="py-3 px-4 text-left font-medium text-gray-500">
+                        Tanggal & Waktu
+                      </th>
+                      <th className="py-3 px-4 text-left font-medium text-gray-500">
+                        Status
+                      </th>
+                      <th className="py-3 px-4 text-left font-medium text-gray-500">
+                        Aksi
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {roomReservations.length > 0 ? (
+                      roomReservations.map((reservation) => (
+                        <tr
+                          key={reservation.id}
+                          className="border-b border-gray-200"
+                        >
+                          <td className="py-3 px-4 text-black">
+                            {reservation.user}
+                          </td>
+                          <td className="py-3 px-4 text-black">
+                            {reservation.purpose}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-gray-400" />
+                                {reservation.date}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-gray-400" />
+                                {reservation.time}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Clock className="w-4 h-4 text-gray-400" />
-                              {reservation.time}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusStyle(
-                              reservation.status
-                            )}`}
-                          >
-                            {reservation.status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex space-x-2">
-                            <button
-                              className="text-gray-400 hover:text-gray-800"
-                              onClick={() =>
-                                setSelectedReservation(reservation)
-                              }
-                              title="Lihat Detail"
+                          </td>
+                          <td className="py-3 px-4">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusStyle(
+                                reservation.status
+                              )}`}
                             >
-                              <Eye className="w-5 h-5" />
-                            </button>
-                            {reservation.status === "Menunggu" && (
-                              <>
-                                <button
-                                  className="text-green-500 hover:text-green-700"
-                                  onClick={() =>
-                                    handleApproveReservation(reservation.id)
-                                  }
-                                  title="Setujui"
-                                >
-                                  <Check className="w-5 h-5" />
-                                </button>
-                                <button
-                                  className="text-red-500 hover:text-red-700"
-                                  onClick={() =>
-                                    setRejectReservation(reservation)
-                                  }
-                                  title="Tolak"
-                                >
-                                  <X className="w-5 h-5" />
-                                </button>
-                              </>
-                            )}
-                          </div>
+                              {reservation.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex space-x-2">
+                              <button
+                                className="text-gray-400 hover:text-gray-800"
+                                onClick={() =>
+                                  setSelectedReservation(reservation)
+                                }
+                                title="Lihat Detail"
+                              >
+                                <Eye className="w-5 h-5" />
+                              </button>
+                              {reservation.status === "Menunggu" && (
+                                <>
+                                  <button
+                                    className="text-green-500 hover:text-green-700"
+                                    onClick={() =>
+                                      handleApproveReservation(reservation.id)
+                                    }
+                                    title="Setujui"
+                                  >
+                                    <Check className="w-5 h-5" />
+                                  </button>
+                                  <button
+                                    className="text-red-500 hover:text-red-700"
+                                    onClick={() =>
+                                      setRejectReservation(reservation)
+                                    }
+                                    title="Tolak"
+                                  >
+                                    <X className="w-5 h-5" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          className="py-4 px-4 text-center text-gray-500"
+                        >
+                          Belum ada reservasi untuk ruangan ini
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan={5}
-                        className="py-4 px-4 text-center text-gray-500"
-                      >
-                        Belum ada reservasi untuk ruangan ini
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>

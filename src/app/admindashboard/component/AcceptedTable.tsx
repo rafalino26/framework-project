@@ -12,8 +12,8 @@ type Reservation = {
   time: string;
   status: "Menunggu" | "Disetujui" | "Ditolak";
   timestamp: string;
-  rejectionReason?: string;
-  notes?: string;
+  rejectionReason?: string | null;
+  notes?: string | null;
 };
 
 interface AcceptedTableProps {

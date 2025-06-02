@@ -190,15 +190,23 @@ export default function DetailRoomPopup({
 
       // Try to call API first
       try {
+        // Import apiService at the top of the file if needed
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/rooms/${room.id}/comments/${commentId}`,
           {
             method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              // Include authorization header if needed
+              // "Authorization": `Bearer ${localStorage.getItem('token')}`,
+            },
           }
         );
 
         if (response.ok) {
           console.log("Comment deleted successfully from API");
+        } else {
+          throw new Error("Failed to delete comment from API");
         }
       } catch (apiError) {
         console.log("API delete failed, updating locally");
