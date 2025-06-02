@@ -28,7 +28,7 @@ const ChangeRoleModal: React.FC<ChangeRoleModalProps> = ({ isOpen, onClose, user
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center">
             <div className="bg-white w-full max-w-md rounded-lg shadow-lg p-6 relative">
                 <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
                     <X className="w-5 h-5" />
