@@ -1,87 +1,120 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import api from "@/app/services/api";
 import { FaBuilding, FaCalendarAlt, FaThumbsUp, FaThumbsDown, FaClock, FaStar } from "react-icons/fa";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LabelList} from "recharts";
 
+interface TopUsedRoom {
+  roomCode: string;
+  roomName: string | null;
+  totalDurationSeconds: number;
+}
+interface OverviewData {
+  totalRooms: number; newRoomsThisMonth: number; activeRooms: number; emptyRooms: number;
+  positiveCommentCount: number;
+  commentDistribution: { positiveComments: number; negativeComments: number; totalComments: number; };
+  topUsedRooms: TopUsedRoom[];
+}
+
+interface HourlyAvailability { hour: number; averageEmptyRooms: number; }
+interface RatingSatisfaction { rating: number; count: number; }
+interface AnalyticsData {
+  hourlyRoomAvailability: HourlyAvailability[];
+  roomRatingSatisfaction: RatingSatisfaction[];
+}
+
+interface CommentData {
+  commentId: string;
+  roomCode: string;
+  commentText: string;
+  rating: number;
+  likeCount: number;
+  dislikeCount: number;
+  commentedAt: string;
+  commentedAtRelative: string;
+  userFullName: string;
+  username: string;
+}
+
+
 export default function DashboardContent() {
-  // State untuk tab aktif
   const [activeTab, setActiveTab] = useState("Ikhtisar");
 
-  // Data untuk bar chart
-  const roomUsageData = [
-    { name: "JTE-01", usage: 85 },
-    { name: "JTE-02", usage: 65 },
-    { name: "JTE-03", usage: 45 },
-    { name: "JTE-04", usage: 30 },
-    { name: "JTE-05", usage: 25 },
-  ];
+  const [overviewData, setOverviewData] = useState<OverviewData>({
+    totalRooms: 0, newRoomsThisMonth: 0, activeRooms: 0, emptyRooms: 0,
+    positiveCommentCount: 0,
+    commentDistribution: { positiveComments: 0, negativeComments: 0, totalComments: 1 },
+    topUsedRooms: [],
+  });
 
-  // Data untuk pie chart
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
+    hourlyRoomAvailability: [],
+    roomRatingSatisfaction: [],
+  });
+
+  const [commentsData, setCommentsData] = useState<CommentData[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (activeTab === "Ikhtisar") {
+          const response = await api.get("/dashboard");
+          setOverviewData(response.data);
+        } else if (activeTab === "Analitik") {
+          const response = await api.get("/dashboard/analytics");
+          setAnalyticsData(response.data);
+        } else if (activeTab === "Komentar") {
+          const response = await api.get("/dashboard/comments");
+          setCommentsData(response.data);
+        }
+      } catch (error) {
+        console.error(`Failed to fetch data for tab ${activeTab}:`, error);
+      } finally {
+      }
+    };
+
+    fetchData();
+  }, [activeTab]);
+
+  const roomUsageData = overviewData.topUsedRooms.map(room => ({
+    name: room.roomName || room.roomCode,
+    usage: parseFloat((room.totalDurationSeconds / 3600).toFixed(2)),
+  }));
   const sentimentData = [
-    { name: "Positif", value: 65, color: "#22c55e" },
-    { name: "Negatif", value: 35, color: "#ef4444" },
+    { name: "Positif", value: overviewData.commentDistribution.positiveComments, color: "#22c55e" },
+    { name: "Negatif", value: overviewData.commentDistribution.negativeComments, color: "#ef4444" },
   ];
-
-    // Data untuk tab Analitik
-  const roomEmptyTime = [
-    { time: "08:00", count: 12 },
-    { time: "10:00", count: 8 },
-    { time: "12:00", count: 15 },
-    { time: "14:00", count: 5 },
-    { time: "16:00", count: 10 },
-  ];
-
-  const roomUsagePieData = [
-    { name: "Laboratorium 1", value: 40, color: "#6366F1" },
-    { name: "Laboratorium 2", value: 25, color: "#EF4444" },
-    { name: "Ruang Kuliah", value: 20, color: "#FACC15" },
-    { name: "Ruang Seminar", value: 15, color: "#10B981" },
-  ];
-
-  const satisfactionData = [
-    { name: "5 Bintang", value: 35, color: "#6366F1" },
-    { name: "4 Bintang", value: 30, color: "#EF4444" },
-    { name: "3 Bintang", value: 20, color: "#10B981" },
-    { name: "2 Bintang", value: 10, color: "#FACC15" },
-    { name: "1 Bintang", value: 5, color: "#A855F7" },
-  ];
-
-  // Data untuk komentar
-  const comments = [
-    {
-      id: 1,
-      name: "Budi Santoso",
-      room: "JTE-01",
-      time: "2 jam lalu",
-      text: "Ruangan sangat nyaman dan bersih. AC berfungsi dengan baik.",
-      likes: 12,
-      dislikes: 2,
-      rating: 5,
-    },
-    {
-      id: 2,
-      name: "Siti Rahayu",
-      room: "JTE-02",
-      time: "5 jam lalu",
-      text: "Proyektor tidak berfungsi dengan baik, perlu perbaikan.",
-      likes: 8,
-      dislikes: 1,
-      rating: 3,
-    },
-    {
-      id: 3,
-      name: "Ahmad Wijaya",
-      room: "JTE-03",
-      time: "1 hari lalu",
-      text: "Kursi kurang nyaman untuk perkuliahan jangka panjang.",
-      likes: 5,
-      dislikes: 3,
-      rating: 3,
-    },
-  ];
+  const positiveCommentPercentage = overviewData.commentDistribution.totalComments > 0
+    ? ((overviewData.commentDistribution.positiveComments / overviewData.commentDistribution.totalComments) * 100).toFixed(0) : 0;
+  const activeRoomsPercentage = overviewData.totalRooms > 0
+    ? ((overviewData.activeRooms / overviewData.totalRooms) * 100).toFixed(0) : 0;
+    
+  const roomEmptyTime = analyticsData.hourlyRoomAvailability
+    .filter(data => data.hour >= 7 && data.hour <= 22)
+    .map(data => ({
+      time: `${String(data.hour).padStart(2, '0')}:00`,
+      count: data.averageEmptyRooms,
+    }));
   
- // Komponen Rating Bintang
+  const getRatingColor = (rating: number) => {
+    const colors: { [key: number]: string } = {
+        5: "#6366F1", 4: "#10B981", 3: "#FACC15", 2: "#EF4444", 1: "#A855F7",
+    };
+    return colors[rating] || "#d1d5db";
+  };
+
+  const satisfactionData = analyticsData.roomRatingSatisfaction.map(data => ({
+      name: `${data.rating} Bintang`,
+      value: data.count,
+      color: getRatingColor(data.rating),
+  }));
+  
+  const roomUsagePieData = [
+    { name: "Laboratorium 1", value: 40, color: "#6366F1" }, { name: "Laboratorium 2", value: 25, color: "#EF4444" },
+    { name: "Ruang Kuliah", value: 20, color: "#FACC15" }, { name: "Ruang Seminar", value: 15, color: "#10B981" },
+  ];
+
   function RatingStars({ rating }: { rating: number }) {
     return (
       <div className="flex">
@@ -92,7 +125,6 @@ export default function DashboardContent() {
     );
   }
 
-  // Definisi tipe untuk props Card
   interface CardProps {
     title: string;
     value: string;
@@ -100,7 +132,6 @@ export default function DashboardContent() {
     icon: React.ReactNode;
   }
   
-  // Komponen Card
   function Card({ title, value, subtext, icon }: CardProps) {
     return (
       <div className="bg-white text-black p-6 rounded-lg border border-gray-200 flex items-center justify-between">
@@ -136,71 +167,60 @@ export default function DashboardContent() {
       {/* Konten Berdasarkan Tab */}
       {activeTab === "Ikhtisar" && (
         <>
-      {/* Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card title="Total Ruangan" value="25" subtext="+2 ruangan baru bulan ini" icon={<FaBuilding />} />
-        <Card title="Ruangan Aktif" value="18" subtext="72% dari total ruangan" icon={<FaCalendarAlt />} />
-        <Card title="Komentar Positif" value="65%" subtext="+5% dari bulan lalu" icon={<FaThumbsUp />} />
-        <Card title="Waktu Kosong" value="28%" subtext="-3% dari bulan lalu" icon={<FaClock />} />
-      </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card title="Total Ruangan" value={overviewData.totalRooms.toString()} subtext={`+${overviewData.newRoomsThisMonth} ruangan baru bulan ini`} icon={<FaBuilding />} />
+            <Card title="Ruangan Aktif" value={overviewData.activeRooms.toString()} subtext={`${activeRoomsPercentage}% dari total ruangan`} icon={<FaCalendarAlt />} />
+            <Card title="Komentar Positif" value={`${positiveCommentPercentage}%`} subtext={`${overviewData.commentDistribution.positiveComments} dari ${overviewData.commentDistribution.totalComments} ulasan`} icon={<FaThumbsUp />} />
+            <Card title="Ruangan Kosong" value={overviewData.emptyRooms.toString()} subtext="Ruangan yang sedang tidak digunakan" icon={<FaClock />} />
+          </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Bar Chart */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h2 className="text-lg font-semibold">Ruangan Paling Sering Digunakan</h2>
-          <p className="text-gray-500 text-sm">Persentase penggunaan ruangan dalam seminggu terakhir</p>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={roomUsageData}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="usage" fill="#6366F1">
-      <LabelList dataKey="usage" position="top" fill="#000" fontSize={12} />
-    </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-lg font-semibold">Ruangan Paling Sering Digunakan</h2>
+              <p className="text-gray-500 text-sm">Total durasi penggunaan dalam jam</p>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={roomUsageData}>
+                  <XAxis dataKey="name" />
+                  <YAxis label={{ value: 'Jam', angle: -90, position: 'insideLeft' }} />
+                  <Tooltip formatter={(value) => [`${value} jam`, "Durasi"]}/>
+                  <Bar dataKey="usage" fill="#6366F1">
+                    <LabelList dataKey="usage" position="top" fill="#000" fontSize={12} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
 
-        {/* Pie Chart */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h2 className="text-lg font-semibold">Sentimen Komentar</h2>
-        <p className="text-gray-500 text-sm">Distribusi komentar positif dan negatif</p>
-        <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-            {/* Pie Chart dengan label */}
-            <Pie
-                data={sentimentData}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                innerRadius={0}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-            >
-                {sentimentData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-            </Pie>
-            
-            {/* Tooltip saat hover */}
-            <Tooltip formatter={(value, name) => [`${value}%`, name]} />
-
-            {/* Legend di bawah chart */}
-            <Legend verticalAlign="bottom" align="center" />
-            </PieChart>
-        </ResponsiveContainer>
-        </div>
-
-      </div>
-      </>
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-lg font-semibold">Sentimen Komentar</h2>
+              <p className="text-gray-500 text-sm">Distribusi komentar positif dan negatif</p>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                      data={sentimentData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                      {sentimentData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                  </Pie>
+                  <Tooltip formatter={(value, name) => [value, name]} />
+                  <Legend verticalAlign="bottom" align="center" />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </>
       )}
-      {activeTab === "Analitik" && (
+       {activeTab === "Analitik" && (
         <>
           <div className="bg-white p-6 rounded-lg border border-gray-200">
             <h2 className="text-lg font-semibold">Waktu Ruangan Paling Sering Kosong</h2>
-            <p className="text-gray-500 text-sm">Jumlah ruangan kosong berdasarkan waktu dalam seminggu terakhir</p>
+            <p className="text-gray-500 text-sm">Rata-rata jumlah ruangan kosong per jam</p>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={roomEmptyTime}>
                 <XAxis dataKey="time" />
@@ -220,9 +240,7 @@ export default function DashboardContent() {
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie data={roomUsagePieData} dataKey="value" cx="50%" cy="50%" outerRadius={80} label>
-                    {roomUsagePieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
+                    {roomUsagePieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}
                   </Pie>
                   <Legend />
                 </PieChart>
@@ -231,14 +249,15 @@ export default function DashboardContent() {
 
             <div className="bg-white p-6 rounded-lg border border-gray-200">
               <h2 className="text-lg font-semibold">Tingkat Kepuasan Pengguna</h2>
-              <p className="text-gray-500 text-sm">Berdasarkan rating ruangan</p>
+              <p className="text-gray-500 text-sm">Berdasarkan rating yang diberikan</p>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
-                  <Pie data={satisfactionData} dataKey="value" cx="50%" cy="50%" outerRadius={80} label>
+                  <Pie data={satisfactionData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
                     {satisfactionData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
+                  <Tooltip formatter={(value) => [value, "Jumlah"]} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
@@ -251,35 +270,37 @@ export default function DashboardContent() {
           <h2 className="text-xl font-bold">Komentar Terbaru</h2>
           <p className="text-gray-600">Komentar dan ulasan pengguna tentang ruangan kelas</p>
 
-          {/* List Komentar */}
           <div className="mt-4 space-y-6">
-            {comments.map((comment) => (
-              <div key={comment.id} className="flex justify-between items-start pb-4">
-                {/* Kiri: Isi Komentar */}
-                <div>
-                  <h3 className="font-semibold">{comment.name}</h3>
-                  <div className="text-sm text-gray-500 flex items-center gap-2">
-                    <span className="border border-gray-200 px-2 py-1 rounded-md text-xs">{comment.room}</span>
-                    <span>{comment.time}</span>
+            {commentsData.length > 0 ? (
+              commentsData.map((comment) => (
+                <div key={comment.commentId} className="flex justify-between items-start pb-4 border-b border-gray-200 last:border-b-0">
+                  <div>
+                    <h3 className="font-semibold">{comment.userFullName} <span className="text-gray-500 font-normal">(@{comment.username})</span></h3>
+                    <div className="text-sm text-gray-500 flex items-center gap-2 my-1">
+                      <span className="border border-gray-200 px-2 py-1 rounded-md text-xs font-medium bg-gray-50">{comment.roomCode}</span>
+                      <span>{comment.commentedAtRelative}</span>
+                    </div>
+                    <p className="mt-2 text-gray-800">{comment.commentText}</p>
+                    <div className="flex items-center gap-4 mt-2 text-gray-500">
+                      <div className="flex text-sm items-center gap-1">
+                        <FaThumbsUp className="cursor-pointer hover:text-blue-500" />
+                        <span>{comment.likeCount}</span>
+                      </div>
+                      <div className="flex text-sm items-center gap-1">
+                        <FaThumbsDown className="cursor-pointer hover:text-red-500" />
+                        <span>{comment.dislikeCount}</span>
+                      </div>
+                    </div>
                   </div>
-                  <p className="mt-2">{comment.text}</p>
-                  {/* Tombol Like & Dislike */}
-                  <div className="flex items-center gap-4 mt-2 text-gray-500">
-                    <div className="flex text-sm items-center gap-1">
-                      <FaThumbsUp className="cursor-pointer" />
-                      <span>{comment.likes}</span>
-                    </div>
-                    <div className="flex text-sm items-center gap-1">
-                      <FaThumbsDown className="cursor-pointer" />
-                      <span>{comment.dislikes}</span>
-                    </div>
+                  
+                  <div className="flex-shrink-0">
+                    <RatingStars rating={comment.rating} />
                   </div>
                 </div>
-
-                {/* Kanan: Bintang Rating */}
-                <RatingStars rating={comment.rating} />
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-gray-500 text-center py-8">Belum ada komentar.</p>
+            )}
           </div>
         </div>
       )}
