@@ -7,7 +7,6 @@ import ChangeRoleModal from "../component/ChangeRoleModal";
 import { User } from "../types/user";
 import api from "@/app/services/api";
 
-// Mapping untuk tampilan dan data API
 const roleDisplayMap: { [key: string]: string } = {
   "Semua Role": "Semua Role",
   "Super Admin": "superadmin",
@@ -25,9 +24,8 @@ const rolesForFilter = ["Semua Role", "Super Admin", "Admin", "User"];
 const statuses = ["Semua Status", "Aktif", "Tidak Aktif"];
 
 export default function UserManagementPage() {
-  // --- STATE MANAGEMENT ---
-  const [users, setUsers] = useState<User[]>([]); // State untuk menampung data dari API
-  const [isLoading, setIsLoading] = useState(true); // State untuk loading
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedRole, setSelectedRole] = useState("Semua Role");
   const [selectedStatus, setSelectedStatus] = useState("Semua Status");
   const [searchQuery, setSearchQuery] = useState("");
@@ -38,8 +36,6 @@ export default function UserManagementPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isChangeRoleOpen, setIsChangeRoleOpen] = useState(false);
   
-  // --- DATA FETCHING ---
-  // 3. useEffect untuk mengambil data pengguna saat komponen dimuat
   useEffect(() => {
     const fetchUsers = async () => {
       setIsLoading(true);
@@ -48,7 +44,6 @@ export default function UserManagementPage() {
         setUsers(response.data);
       } catch (error) {
         console.error("Gagal mengambil data pengguna:", error);
-        // Anda bisa menambahkan state untuk menampilkan pesan error di UI
       } finally {
         setIsLoading(false);
       }
@@ -56,7 +51,6 @@ export default function UserManagementPage() {
     fetchUsers();
   }, []);
 
-  // --- HANDLERS ---
   const handleRoleChange = (role: string) => {
     setSelectedRole(role);
     setIsRoleDropdownOpen(false);
@@ -68,15 +62,14 @@ export default function UserManagementPage() {
   const handleOpenDetail = (user: User) => {
     setSelectedUser(user);
     setIsDetailOpen(true);
-    setOpenDropdownIndex(null); // Tutup dropdown aksi
+    setOpenDropdownIndex(null);
   };
   const handleOpenChangeRole = (user: User) => {
     setSelectedUser(user);
     setIsChangeRoleOpen(true);
-    setOpenDropdownIndex(null); // Tutup dropdown aksi
+    setOpenDropdownIndex(null);
   };
 
-  // 4. Implementasi fungsi untuk mengubah role (memanggil API PATCH)
   const handleChangeRole = async (userId: string, newDisplayRole: string) => {
     const newApiRole = roleDisplayMap[newDisplayRole] as User["role"];
     if (!newApiRole) {
@@ -86,8 +79,6 @@ export default function UserManagementPage() {
     
     try {
       await api.patch(`/user/${userId}/role`, { role: newApiRole });
-      
-      // Update state lokal agar UI langsung berubah
       setUsers(currentUsers =>
         currentUsers.map(user =>
           user.id === userId ? { ...user, role: newApiRole } : user
@@ -95,7 +86,7 @@ export default function UserManagementPage() {
       );
       
       console.log(`Role untuk user ID: ${userId} berhasil diubah menjadi ${newApiRole}`);
-      setIsChangeRoleOpen(false); // Tutup modal setelah berhasil
+      setIsChangeRoleOpen(false);
       
     } catch (error) {
       console.error("Gagal mengubah role pengguna:", error);
@@ -103,8 +94,6 @@ export default function UserManagementPage() {
     }
   };
 
-  // --- FILTERING & DISPLAY LOGIC ---
-  // 5. Sesuaikan logika filter dengan data dari API
   const filteredUsers = users.filter((user) => {
     const userStatus = user.lastSignInAt ? "Aktif" : "Tidak Aktif";
     const apiRole = roleDisplayMap[selectedRole];
@@ -121,7 +110,6 @@ export default function UserManagementPage() {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  // Helper untuk format tanggal
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "Belum pernah login";
     return new Date(dateString).toLocaleString('id-ID', {
@@ -130,7 +118,6 @@ export default function UserManagementPage() {
     });
   };
 
-  // Refs dan useEffect untuk menutup dropdown (tidak berubah)
   const roleRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
   const actionRef = useRef<HTMLDivElement>(null);
@@ -140,7 +127,6 @@ export default function UserManagementPage() {
       const target = event.target as Node;
       if (roleRef.current && !roleRef.current.contains(target)) setIsRoleDropdownOpen(false);
       if (statusRef.current && !statusRef.current.contains(target)) setIsStatusDropdownOpen(false);
-      // Modifikasi kecil: pastikan ref ada sebelum cek contains
       if (openDropdownIndex !== null && actionRef.current && !actionRef.current.contains(target)) {
         setOpenDropdownIndex(null);
       }
@@ -262,7 +248,6 @@ export default function UserManagementPage() {
             ) : filteredUsers.length === 0 ? (
               <tr><td colSpan={8} className="text-center py-8 text-gray-500">Tidak ada pengguna yang cocok.</td></tr>
             ) : (
-              // 6. Sesuaikan tampilan data di tabel
               filteredUsers.map((user, idx) => {
                 const userStatus = user.lastSignInAt ? "Aktif" : "Tidak Aktif";
                 const displayRole = roleApiMap[user.role] || user.role;
