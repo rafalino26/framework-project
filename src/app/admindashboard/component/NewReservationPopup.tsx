@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { X } from "lucide-react";
+import api from "@/app/services/api";
 
 interface NewReservationPopupProps {
   onClose: () => void;
@@ -16,6 +17,105 @@ interface NewReservationPopupProps {
   roomId?: string; // Optional roomId for pre-selecting a room
 }
 
+// Room type to match the backend response
+type Room = {
+  roomId: string;
+  roomCode: string;
+  roomName: string;
+  status: "aktif" | "kosong" | "pemeliharaan";
+  capacity: number;
+  rating: number;
+  courseName: string | null;
+  lecturerName: string | null;
+  scheduleStartTime: Date | null;
+  scheduleEndTime: Date | null;
+  facilities?: string[];
+};
+
+// API service to get available rooms using the same pattern as RoomContent
+const roomApiService = {
+  async getRooms(): Promise<Room[]> {
+    try {
+      const response = await api.get("/rooms/current-status");
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error("API Error:", error);
+      return this.getMockRooms(); // Return mock data when API fails
+    }
+  },
+
+  // Mock rooms to match the actual room data structure from RoomContent
+  getMockRooms(): Room[] {
+    return [
+      {
+        roomId: "1",
+        roomCode: "JTE-01",
+        roomName: "Ruang Kuliah 01",
+        status: "aktif",
+        capacity: 40,
+        rating: 4.5,
+        courseName: "Algoritma dan Pemrograman",
+        lecturerName: "Dr. Budi Santoso",
+        scheduleStartTime: null,
+        scheduleEndTime: null,
+        facilities: ["Proyektor", "AC", "Whiteboard"],
+      },
+      {
+        roomId: "2",
+        roomCode: "JTE-02",
+        roomName: "Ruang Kuliah 02",
+        status: "kosong",
+        capacity: 30,
+        rating: 4.2,
+        courseName: null,
+        lecturerName: null,
+        scheduleStartTime: null,
+        scheduleEndTime: null,
+        facilities: ["Proyektor", "AC", "Whiteboard"],
+      },
+      {
+        roomId: "3",
+        roomCode: "JTE-03",
+        roomName: "Ruang Kuliah 03",
+        status: "aktif",
+        capacity: 35,
+        rating: 3.8,
+        courseName: "Jaringan Komputer",
+        lecturerName: "Dr. Ahmad Wijaya",
+        scheduleStartTime: null,
+        scheduleEndTime: null,
+        facilities: ["Proyektor", "AC", "Whiteboard"],
+      },
+      {
+        roomId: "4",
+        roomCode: "JTE-04",
+        roomName: "Ruang Kuliah 04",
+        status: "pemeliharaan",
+        capacity: 25,
+        rating: 4.0,
+        courseName: null,
+        lecturerName: null,
+        scheduleStartTime: null,
+        scheduleEndTime: null,
+        facilities: ["Proyektor", "AC"],
+      },
+      {
+        roomId: "5",
+        roomCode: "JTE-05",
+        roomName: "Ruang Kuliah 05",
+        status: "aktif",
+        capacity: 30,
+        rating: 4.7,
+        courseName: "Sistem Operasi",
+        lecturerName: "Prof. Darmawan",
+        scheduleStartTime: null,
+        scheduleEndTime: null,
+        facilities: ["Proyektor", "AC", "Whiteboard"],
+      },
+    ];
+  },
+};
+
 export default function NewReservationPopup({
   onClose,
   onSubmit,
@@ -28,6 +128,35 @@ export default function NewReservationPopup({
   const [endTime, setEndTime] = useState("");
   const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
+  const [loadingRooms, setLoadingRooms] = useState(true);
+
+  // Load available rooms
+  useEffect(() => {
+    const loadRooms = async () => {
+      try {
+        setLoadingRooms(true);
+        const rooms = await roomApiService.getRooms();
+        console.log("Loaded rooms:", rooms);
+        setAvailableRooms(rooms);
+      } catch (error) {
+        console.error("Error loading rooms:", error);
+        // Fallback to mock rooms if API fails
+        const mockRooms = roomApiService.getMockRooms();
+        console.log("Using mock rooms:", mockRooms);
+        setAvailableRooms(mockRooms);
+      } finally {
+        setLoadingRooms(false);
+      }
+    };
+
+    loadRooms();
+  }, []);
+
+  // Debug logging for room data
+  useEffect(() => {
+    console.log("Available rooms for selection:", availableRooms);
+  }, [availableRooms]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -37,6 +166,16 @@ export default function NewReservationPopup({
     if (!date) newErrors.date = "Tanggal harus dipilih";
     if (!startTime) newErrors.startTime = "Waktu mulai harus diisi";
     if (!endTime) newErrors.endTime = "Waktu selesai harus diisi";
+
+    // Validate date is not in the past
+    if (date) {
+      const selectedDate = new Date(date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (selectedDate < today) {
+        newErrors.date = "Tanggal tidak boleh di masa lalu";
+      }
+    }
 
     if (startTime && endTime) {
       if (startTime >= endTime) {
@@ -98,15 +237,14 @@ export default function NewReservationPopup({
                 }`}
                 value={room}
                 onChange={(e) => setRoom(e.target.value)}
-                disabled={!!roomId}
+                disabled={loadingRooms || !!roomId} // Disable if roomId is provided
               >
-                <option value="">Pilih ruangan</option>
-                {Array.from(
-                  { length: 10 },
-                  (_, i) => `JTE-${(i + 1).toString().padStart(2, "0")}`
-                ).map((roomOption) => (
-                  <option key={roomOption} value={roomOption}>
-                    {roomOption}
+                <option value="">
+                  {loadingRooms ? "Memuat ruangan..." : "Pilih ruangan"}
+                </option>
+                {availableRooms.map((roomOption) => (
+                  <option key={roomOption.roomId} value={roomOption.roomCode}>
+                    {roomOption.roomCode} - {roomOption.roomName}
                   </option>
                 ))}
               </select>
@@ -142,6 +280,7 @@ export default function NewReservationPopup({
                 </label>
                 <input
                   type="date"
+                  min={new Date().toISOString().split("T")[0]} // Prevent past dates
                   className={`w-full p-2 text-xs sm:text-sm border rounded-md ${
                     errors.date ? "border-red-500" : ""
                   }`}
@@ -203,6 +342,7 @@ export default function NewReservationPopup({
             <button
               type="submit"
               className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-black text-white rounded-md hover:bg-gray-800 transition"
+              disabled={loadingRooms}
             >
               Ajukan Reservasi
             </button>
