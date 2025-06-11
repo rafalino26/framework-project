@@ -212,7 +212,7 @@ export default function SchedulePage() {
                       </td>
                       <td className="p-2 t">{course.name}</td>
                       <td className="p-2">{course.lecturer}</td>
-                      <td className="p-2">{course.time}</td>
+                      <td className="p-2">{course.day}, {course.time}</td>
                       <td className="p-2">{course.room}</td>
                       <td className="p-2">{course.semester}</td>
                     </tr>
