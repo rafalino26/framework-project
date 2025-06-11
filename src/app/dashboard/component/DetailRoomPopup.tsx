@@ -5,17 +5,19 @@ import { X, Star, MessageSquare, ThumbsUp, ThumbsDown } from "lucide-react";
 import CommentPopup from "./CommentPopup";
 
 type Comment = {
-  id: number;
-  user: string;
+  id: string;
+  user: string | { fullName?: string; username?: string; id?: string };
+  text: string;
   rating: number;
-  comment: string;
   likes: number;
   dislikes: number;
-  timestamp: string;
+  date: string;
 };
 
 type RoomDetails = {
   id: string;
+  roomCode?: string;
+  roomName?: string;
   course: string;
   lecturer: string;
   time: string;
@@ -25,7 +27,7 @@ type RoomDetails = {
   facilities: string[];
 };
 
-type DetailRoomPopupProps = {
+type UserDetailRoomPopupProps = {
   isOpen: boolean;
   onClose: () => void;
   room: RoomDetails;
@@ -33,35 +35,23 @@ type DetailRoomPopupProps = {
     roomId: string,
     comment: { text: string; rating: number }
   ) => void;
+  onVoteComment?: (
+    roomId: string,
+    commentId: string,
+    voteType: "like" | "dislike"
+  ) => void;
+  comments?: Comment[];
 };
 
-export default function DetailRoomPopup({
+export default function UserDetailRoomPopup({
   isOpen,
   onClose,
   room,
   onAddComment,
-}: DetailRoomPopupProps) {
+  onVoteComment,
+  comments = [],
+}: UserDetailRoomPopupProps) {
   const [isCommentPopupOpen, setIsCommentPopupOpen] = useState(false);
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: 1,
-      user: "John Doe",
-      rating: 4,
-      comment: "Ruangan nyaman dengan AC yang berfungsi baik",
-      likes: 12,
-      dislikes: 2,
-      timestamp: "3 jam lalu",
-    },
-    {
-      id: 2,
-      user: "Jane Smith",
-      rating: 3,
-      comment: "Proyektor kadang mati sendiri",
-      likes: 5,
-      dislikes: 1,
-      timestamp: "1 hari lalu",
-    },
-  ]);
 
   const renderStars = (rating: number) => {
     return (
@@ -79,19 +69,6 @@ export default function DetailRoomPopup({
   };
 
   const handleAddComment = (commentData: { text: string; rating: number }) => {
-    // Add to local state
-    const newComment: Comment = {
-      id: comments.length + 1,
-      user: "Anda",
-      rating: commentData.rating,
-      comment: commentData.text,
-      likes: 0,
-      dislikes: 0,
-      timestamp: "Baru saja",
-    };
-
-    setComments([newComment, ...comments]);
-
     // Call the parent handler if provided
     if (onAddComment) {
       onAddComment(room.id, commentData);
@@ -101,10 +78,22 @@ export default function DetailRoomPopup({
     setIsCommentPopupOpen(false);
   };
 
+  const handleLikeComment = (commentId: string) => {
+    if (onVoteComment) {
+      onVoteComment(room.id, commentId, "like");
+    }
+  };
+
+  const handleDislikeComment = (commentId: string) => {
+    if (onVoteComment) {
+      onVoteComment(room.id, commentId, "dislike");
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/20 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg p-4 md:p-6 w-full max-w-4xl mx-4 border border-gray-200 shadow-lg max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
@@ -121,12 +110,24 @@ export default function DetailRoomPopup({
             <h3 className="text-lg font-semibold">Informasi Ruangan</h3>
             <div className="space-y-3">
               <div>
-                <p className="font-semibold text-gray-600">Mata Kuliah</p>
+                <p className="font-semibold text-gray-600">Kode Ruangan</p>
+                <p className="text-black">{room.roomCode || room.id}</p>
+              </div>
+
+              {room.roomName && room.roomName !== room.id && (
+                <div>
+                  <p className="font-semibold text-gray-600">Nama Ruangan</p>
+                  <p className="text-black">{room.roomName}</p>
+                </div>
+              )}
+
+              <div>
+                <p className="font-semibold text-gray-600">Event/Kegiatan</p>
                 <p className="text-black">{room.course}</p>
               </div>
 
               <div>
-                <p className="font-semibold text-gray-600">Dosen</p>
+                <p className="font-semibold text-gray-600">Penanggung Jawab</p>
                 <p className="text-black">{room.lecturer}</p>
               </div>
 
@@ -190,49 +191,86 @@ export default function DetailRoomPopup({
             </div>
 
             <div className="space-y-4 overflow-y-auto flex-1 pr-2 max-h-[40vh] md:max-h-none">
-              {comments.map((comment) => (
-                <div
-                  key={comment.id}
-                  className="p-4 border border-gray-200 rounded-lg"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h4 className="font-medium text-black">{comment.user}</h4>
-                      {renderStars(comment.rating)}
+              {comments.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  Belum ada komentar untuk ruangan ini
+                </div>
+              ) : (
+                comments.map((comment) => (
+                  <div
+                    key={comment.id}
+                    className="p-4 border border-gray-200 rounded-lg"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                          <span className="text-sm font-medium">
+                            {typeof comment.user === "string"
+                              ? comment.user.substring(0, 2).toUpperCase()
+                              : (
+                                  comment.user?.fullName ||
+                                  comment.user?.username ||
+                                  "U"
+                                )
+                                  .substring(0, 2)
+                                  .toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-black">
+                            {typeof comment.user === "string"
+                              ? comment.user
+                              : comment.user?.fullName ||
+                                comment.user?.username ||
+                                "User"}
+                          </h4>
+                          <div className="flex items-center gap-2">
+                            {renderStars(comment.rating)}
+                            <span className="text-sm text-gray-500">
+                              ({comment.rating}/5)
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-sm text-gray-500">
+                        {comment.date}
+                      </span>
                     </div>
-                    <span className="text-sm text-gray-500">
-                      {comment.timestamp}
-                    </span>
-                  </div>
 
-                  <p className="text-black mb-3">{comment.comment}</p>
+                    <p className="text-black mb-3">{comment.text}</p>
 
-                  <div className="flex justify-between items-center">
                     <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <button className="flex items-center gap-1 hover:text-black">
+                      <button
+                        className="flex items-center gap-1 hover:text-green-600 transition-colors"
+                        onClick={() => handleLikeComment(comment.id)}
+                      >
                         <ThumbsUp className="h-4 w-4" />
                         <span>{comment.likes}</span>
                       </button>
-                      <button className="flex items-center gap-1 hover:text-black">
+                      <button
+                        className="flex items-center gap-1 hover:text-red-600 transition-colors"
+                        onClick={() => handleDislikeComment(comment.id)}
+                      >
                         <ThumbsDown className="h-4 w-4" />
                         <span>{comment.dislikes}</span>
                       </button>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
       </div>
+
       {/* Comment Popup */}
-            {isCommentPopupOpen && (
-              <CommentPopup
-                roomId={room.id}
-                onClose={() => setIsCommentPopupOpen(false)}
-                onSubmit={handleAddComment}
-              />
-            )}
+      {isCommentPopupOpen && (
+        <CommentPopup
+          roomId={room.id}
+          onClose={() => setIsCommentPopupOpen(false)}
+          onSubmit={handleAddComment}
+        />
+      )}
     </div>
   );
 }

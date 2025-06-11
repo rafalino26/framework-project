@@ -270,12 +270,12 @@ export default function DetailRoomPopup({
               )}
 
               <div>
-                <p className="font-semibold text-gray-600">Mata Kuliah</p>
+                <p className="font-semibold text-gray-600">Event/Kegiatan</p>
                 <p className="text-black">{room.course}</p>
               </div>
 
               <div>
-                <p className="font-semibold text-gray-600">Dosen</p>
+                <p className="font-semibold text-gray-600">Penanggung Jawab</p>
                 <p className="text-black">{room.lecturer}</p>
               </div>
 

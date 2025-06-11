@@ -30,10 +30,10 @@ type Room = {
   status: "aktif" | "kosong" | "pemeliharaan";
   capacity: number;
   rating: number;
-  courseName: string | null;
-  lecturerName: string | null;
-  scheduleStartTime: Date | null;
-  scheduleEndTime: Date | null;
+  eventName: string | null; // Changed from courseName
+  personInCharge: string | null; // Changed from lecturerName
+  eventStartTime: string | null; // Changed from scheduleStartTime (now string)
+  eventEndTime: string | null; // Changed from scheduleEndTime (now string)
   facilities?: string[];
 };
 
@@ -100,11 +100,59 @@ const apiService = {
   // Get all rooms with current status
   async getRooms(): Promise<Room[]> {
     try {
+      console.log(
+        "Making API call to:",
+        `${process.env.NEXT_PUBLIC_API_URL}/rooms/current-status`
+      );
       const response = await api.get("/rooms/current-status");
-      return Array.isArray(response.data) ? response.data : [];
+
+      console.log("Raw API response:", response);
+      console.log("Response data:", response.data);
+
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        console.log("First room structure:", response.data[0]);
+        console.log("Available fields:", Object.keys(response.data[0]));
+        return response.data;
+      } else {
+        console.warn(
+          "API response is empty or not an array, trying alternative endpoint..."
+        );
+        return await this.getRoomsAlternative();
+      }
     } catch (error) {
-      console.error("API Error:", error);
-      return []; // Return empty array when API fails
+      console.error("Primary API Error:", error);
+      console.log("Trying alternative endpoint...");
+      return await this.getRoomsAlternative();
+    }
+  },
+
+  // Alternative method to get rooms if current-status doesn't work
+  async getRoomsAlternative(): Promise<Room[]> {
+    try {
+      console.log("Trying alternative API endpoint...");
+      const response = await api.get("/rooms");
+      console.log("Alternative API response:", response.data);
+
+      if (Array.isArray(response.data)) {
+        // Transform the data if needed
+        return response.data.map((room: any) => ({
+          roomId: room.roomId || room.id,
+          roomCode: room.roomCode,
+          roomName: room.roomName,
+          status: room.status || "kosong",
+          capacity: room.capacity || 0,
+          rating: room.rating || 0,
+          eventName: room.eventName || room.courseName || null,
+          personInCharge: room.personInCharge || room.lecturerName || null,
+          eventStartTime: room.eventStartTime || room.scheduleStartTime || null,
+          eventEndTime: room.eventEndTime || room.scheduleEndTime || null,
+          facilities: room.facilities || [],
+        }));
+      }
+      return [];
+    } catch (error) {
+      console.error("Alternative API Error:", error);
+      return [];
     }
   },
 
@@ -279,22 +327,30 @@ const apiService = {
 };
 
 // Helper functions
-const formatTime = (startTime: Date | null, endTime: Date | null): string => {
+const formatTime = (
+  startTime: string | null,
+  endTime: string | null
+): string => {
   if (!startTime || !endTime) return "-";
 
-  const start = new Date(startTime);
-  const end = new Date(endTime);
+  try {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  };
+    const formatTime = (date: Date) => {
+      return date.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+    };
 
-  const dayName = start.toLocaleDateString("id-ID", { weekday: "long" });
-  return `${dayName}, ${formatTime(start)} - ${formatTime(end)}`;
+    const dayName = start.toLocaleDateString("id-ID", { weekday: "long" });
+    return `${dayName}, ${formatTime(start)} - ${formatTime(end)}`;
+  } catch (error) {
+    console.error("Error formatting time:", error);
+    return "-";
+  }
 };
 
 const mapStatusToDisplay = (
@@ -401,12 +457,25 @@ export default function RuanganPage() {
   const loadRooms = async () => {
     try {
       setLoading(true);
+      console.log("Loading rooms...");
       const roomsData = await apiService.getRooms();
       console.log("Rooms data from API:", roomsData);
+      console.log("Number of rooms:", roomsData.length);
+
+      // Log each room's event data
+      roomsData.forEach((room, index) => {
+        console.log(`Room ${index + 1} (${room.roomCode}):`, {
+          eventName: room.eventName,
+          personInCharge: room.personInCharge,
+          eventStartTime: room.eventStartTime,
+          eventEndTime: room.eventEndTime,
+          status: room.status,
+        });
+      });
+
       setRooms(roomsData);
     } catch (error: any) {
       console.error("Error loading rooms:", error);
-      // The axios interceptor will handle 401 errors automatically
       showNotification("Gagal memuat data ruangan", "error");
     } finally {
       setLoading(false);
@@ -472,10 +541,10 @@ export default function RuanganPage() {
   const filteredRooms = rooms.filter((room) => {
     const matchesSearch =
       room.roomCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (room.courseName &&
-        room.courseName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (room.lecturerName &&
-        room.lecturerName.toLowerCase().includes(searchQuery.toLowerCase()));
+      (room.eventName &&
+        room.eventName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (room.personInCharge &&
+        room.personInCharge.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const displayStatus = mapStatusToDisplay(room.status);
     const matchesStatus =
@@ -847,7 +916,7 @@ export default function RuanganPage() {
         <div className="relative w-full md:w-96">
           <input
             type="text"
-            placeholder="Cari ruangan, mata kuliah, atau dosen..."
+            placeholder="Cari ruangan, event, atau penanggung jawab..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 pr-4 py-2 w-full border border-gray-200 rounded-md text-black"
@@ -942,10 +1011,10 @@ export default function RuanganPage() {
                   Kode
                 </th>
                 <th className="py-3 px-4 text-left font-medium text-gray-500">
-                  Mata Kuliah
+                  Event/Kegiatan
                 </th>
                 <th className="py-3 px-4 text-left font-medium text-gray-500">
-                  Dosen
+                  Penanggung Jawab
                 </th>
                 <th className="py-3 px-4 text-left font-medium text-gray-500">
                   Waktu
@@ -971,13 +1040,13 @@ export default function RuanganPage() {
                     {room.roomCode}
                   </td>
                   <td className="py-4 px-4 text-black text-sm">
-                    {room.courseName || "-"}
+                    {room.eventName || "-"}
                   </td>
                   <td className="py-4 px-4 text-black text-sm">
-                    {room.lecturerName || "-"}
+                    {room.personInCharge || "-"}
                   </td>
                   <td className="py-4 px-4 text-black text-sm">
-                    {formatTime(room.scheduleStartTime, room.scheduleEndTime)}
+                    {formatTime(room.eventStartTime, room.eventEndTime)}
                   </td>
                   <td className="py-4 px-4">
                     {renderStatusBadge(room.status)}
@@ -1098,16 +1167,18 @@ export default function RuanganPage() {
               <div className="space-y-3">
                 <div className="flex items-center">
                   <Book className="h-4 w-4 mr-2 text-black" />
-                  <span className="text-black">{room.courseName || "-"}</span>
+                  <span className="text-black">{room.eventName || "-"}</span>
                 </div>
                 <div className="flex items-center">
                   <User className="h-4 w-4 mr-2 text-black" />
-                  <span className="text-black">{room.lecturerName || "-"}</span>
+                  <span className="text-black">
+                    {room.personInCharge || "-"}
+                  </span>
                 </div>
                 <div className="flex items-center">
                   <Clock className="h-4 w-4 mr-2 text-black" />
                   <span className="text-black">
-                    {formatTime(room.scheduleStartTime, room.scheduleEndTime)}
+                    {formatTime(room.eventStartTime, room.eventEndTime)}
                   </span>
                 </div>
               </div>
@@ -1202,16 +1273,16 @@ export default function RuanganPage() {
             onClose={() => setIsDetailPopupOpen(false)}
             room={{
               id: selectedRoom.roomCode,
-              course: selectedRoom.courseName || "-",
-              lecturer: selectedRoom.lecturerName || "-",
+              course: selectedRoom.eventName || "-", // Map eventName to course
+              lecturer: selectedRoom.personInCharge || "-", // Map personInCharge to lecturer
               time: formatTime(
-                selectedRoom.scheduleStartTime,
-                selectedRoom.scheduleEndTime
+                selectedRoom.eventStartTime,
+                selectedRoom.eventEndTime
               ),
               status: mapStatusToDisplay(selectedRoom.status),
               rating: selectedRoom.rating,
               capacity: selectedRoom.capacity,
-              facilities: selectedRoom.facilities || [], // Don't use default values
+              facilities: selectedRoom.facilities || [],
             }}
             onAddComment={(
               roomCode: string,
@@ -1225,16 +1296,16 @@ export default function RuanganPage() {
             onClose={() => setIsListDetailPopupOpen(false)}
             room={{
               id: selectedRoom.roomCode,
-              course: selectedRoom.courseName || "-",
-              lecturer: selectedRoom.lecturerName || "-",
+              course: selectedRoom.eventName || "-", // Map eventName to course
+              lecturer: selectedRoom.personInCharge || "-", // Map personInCharge to lecturer
               time: formatTime(
-                selectedRoom.scheduleStartTime,
-                selectedRoom.scheduleEndTime
+                selectedRoom.eventStartTime,
+                selectedRoom.eventEndTime
               ),
               status: mapStatusToDisplay(selectedRoom.status),
               rating: selectedRoom.rating,
               capacity: selectedRoom.capacity,
-              facilities: selectedRoom.facilities || [], // Don't use default values
+              facilities: selectedRoom.facilities || [],
             }}
             onUpdateRoom={handleUpdateRoom}
             onAddReservation={handleAddReservation}
@@ -1252,16 +1323,16 @@ export default function RuanganPage() {
             isOpen={isEditPopupOpen}
             room={{
               id: selectedRoom.roomCode,
-              course: selectedRoom.courseName || "-",
-              lecturer: selectedRoom.lecturerName || "-",
+              course: selectedRoom.eventName || "-", // Map eventName to course
+              lecturer: selectedRoom.personInCharge || "-", // Map personInCharge to lecturer
               time: formatTime(
-                selectedRoom.scheduleStartTime,
-                selectedRoom.scheduleEndTime
+                selectedRoom.eventStartTime,
+                selectedRoom.eventEndTime
               ),
               status: mapStatusToDisplay(selectedRoom.status),
               rating: selectedRoom.rating,
               capacity: selectedRoom.capacity,
-              facilities: selectedRoom.facilities || [], // Don't use default values
+              facilities: selectedRoom.facilities || [],
             }}
             onClose={() => setIsEditPopupOpen(false)}
             onSave={handleUpdateRoom}
@@ -1272,14 +1343,14 @@ export default function RuanganPage() {
             onClose={() => setIsPrintPopupOpen(false)}
             room={{
               id: selectedRoom.roomCode,
-              course: selectedRoom.courseName || "-",
-              lecturer: selectedRoom.lecturerName || "-",
+              course: selectedRoom.eventName || "-", // Map eventName to course
+              lecturer: selectedRoom.personInCharge || "-", // Map personInCharge to lecturer
               time: formatTime(
-                selectedRoom.scheduleStartTime,
-                selectedRoom.scheduleEndTime
+                selectedRoom.eventStartTime,
+                selectedRoom.eventEndTime
               ),
               capacity: selectedRoom.capacity,
-              facilities: selectedRoom.facilities || [], // Don't use default values
+              facilities: selectedRoom.facilities || [],
             }}
           />
         </>
