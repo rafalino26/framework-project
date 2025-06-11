@@ -842,7 +842,7 @@ export default function ListDetailPopup({
                   <div className="flex-1">
                     <div className="flex items-center">
                       <p className="text-black font-medium mr-2">
-                        Mata Kuliah:
+                        Event/Kegiatan:
                       </p>
                       <p className="text-gray-600">{room.course}</p>
                     </div>
@@ -853,7 +853,9 @@ export default function ListDetailPopup({
                   <User className="h-4 w-4 mr-3 mt-0.5 text-gray-500" />
                   <div className="flex-1">
                     <div className="flex items-center">
-                      <p className="text-black font-medium mr-2">Dosen:</p>
+                      <p className="text-black font-medium mr-2">
+                        Penanggung Jawab:
+                      </p>
                       <p className="text-gray-600">{room.lecturer}</p>
                     </div>
                   </div>

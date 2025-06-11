@@ -12,7 +12,7 @@ type Reservation = {
   time: string;
   status: "Menunggu" | "Disetujui" | "Ditolak";
   timestamp: string;
-  rejectionReason?: string;
+  rejectionReason?: string | null; // Allow null values
 };
 
 interface RefusedTableProps {
@@ -29,7 +29,7 @@ const DetailModal = ({
   if (!reservation) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg w-full max-w-2xl border border-gray-100 shadow-lg">
         <div className="flex justify-between items-center p-4 border-b border-gray-100">
           <h2 className="text-xl font-semibold">Detail Reservasi</h2>
@@ -57,22 +57,30 @@ const DetailModal = ({
                 <p>{reservation.purpose}</p>
               </div>
               <div>
-                <p className="text-gray-600 font-medium">Tanggal</p>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  {reservation.date}
-                </div>
-              </div>
-              <div>
-                <p className="text-gray-600 font-medium">Waktu</p>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  {reservation.time}
+                <p className="text-gray-600 font-medium">Tanggal & Waktu</p>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    {reservation.date}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-gray-400" />
+                    {reservation.time}
+                  </div>
                 </div>
               </div>
               <div className="col-span-2">
+                <p className="text-gray-600 font-medium">Status</p>
+                <span className="px-3 py-1 rounded-full text-sm bg-red-600 text-white">
+                  Ditolak
+                </span>
+              </div>
+              <div className="col-span-2">
                 <p className="text-gray-600 font-medium">Alasan Penolakan</p>
-                <p className="text-red-600">{reservation.rejectionReason}</p>
+                <p className="text-red-600">
+                  {reservation.rejectionReason ||
+                    "Tidak ada alasan yang diberikan"}
+                </p>
               </div>
               <div className="col-span-2">
                 <p className="text-gray-600 font-medium">Diajukan Pada</p>
@@ -86,7 +94,7 @@ const DetailModal = ({
   );
 };
 
-export default function RefusedTable({ data = [] }: RefusedTableProps) {
+export default function UserRefusedTable({ data = [] }: RefusedTableProps) {
   const [selectedReservation, setSelectedReservation] =
     useState<Reservation | null>(null);
 
@@ -99,7 +107,9 @@ export default function RefusedTable({ data = [] }: RefusedTableProps) {
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Reservasi Ditolak</h1>
-        <p className="text-gray-600 mt-1">Reservasi yang telah ditolak.</p>
+        <p className="text-gray-600 mt-1">
+          Reservasi yang telah ditolak admin.
+        </p>
       </div>
 
       {/* Desktop View */}
@@ -111,16 +121,10 @@ export default function RefusedTable({ data = [] }: RefusedTableProps) {
                 Ruangan
               </th>
               <th className="p-4 text-left text-sm font-medium text-gray-700">
-                Pengguna
-              </th>
-              <th className="p-4 text-left text-sm font-medium text-gray-700">
                 Tujuan
               </th>
               <th className="p-4 text-left text-sm font-medium text-gray-700">
-                Tanggal
-              </th>
-              <th className="p-4 text-left text-sm font-medium text-gray-700">
-                Waktu
+                Tanggal & Waktu
               </th>
               <th className="p-4 text-left text-sm font-medium text-gray-700">
                 Alasan Penolakan
@@ -138,27 +142,27 @@ export default function RefusedTable({ data = [] }: RefusedTableProps) {
                 className="hover:bg-gray-50 border-b border-gray-100"
               >
                 <td className="p-4 font-medium">{reservation.room}</td>
-                <td className="p-4">{reservation.user}</td>
                 <td className="p-4">{reservation.purpose}</td>
                 <td className="p-4">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-gray-400" />
-                    {reservation.date}
-                  </div>
-                </td>
-                <td className="p-4">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-gray-400" />
-                    {reservation.time}
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-gray-400" />
+                      {reservation.date}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-gray-400" />
+                      {reservation.time}
+                    </div>
                   </div>
                 </td>
                 <td className="p-4 text-red-600">
-                  {reservation.rejectionReason}
+                  {reservation.rejectionReason || "Tidak ada alasan"}
                 </td>
                 <td className="p-4">
                   <button
                     onClick={() => setSelectedReservation(reservation)}
                     className="text-gray-400 hover:text-gray-800"
+                    title="Lihat Detail"
                   >
                     <Eye className="w-5 h-5" />
                   </button>
@@ -180,31 +184,20 @@ export default function RefusedTable({ data = [] }: RefusedTableProps) {
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="font-semibold">{reservation.room}</h3>
-                  <p className="text-gray-600">{reservation.user}</p>
+                  <p className="text-gray-600">{reservation.purpose}</p>
                 </div>
-                <button
-                  onClick={() => setSelectedReservation(reservation)}
-                  className="text-blue-600 hover:text-blue-800"
-                >
-                  <Eye className="w-5 h-5" />
-                </button>
+                <span className="px-2 py-1 text-xs rounded-full bg-red-600 text-white">
+                  Ditolak
+                </span>
               </div>
 
-              <div className="border-t border-gray-100 pt-3">
-                <p className="font-medium">Tujuan</p>
-                <p className="text-gray-600">{reservation.purpose}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500">Tanggal</p>
+              <div>
+                <p className="text-sm text-gray-500">Tanggal & Waktu</p>
+                <div className="flex flex-col">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-gray-400" />
                     <span>{reservation.date}</span>
                   </div>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Waktu</p>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-gray-400" />
                     <span>{reservation.time}</span>
@@ -214,18 +207,31 @@ export default function RefusedTable({ data = [] }: RefusedTableProps) {
 
               <div className="text-sm">
                 <p className="text-gray-600 font-medium">Alasan Penolakan</p>
-                <p className="text-red-600">{reservation.rejectionReason}</p>
+                <p className="text-red-600">
+                  {reservation.rejectionReason || "Tidak ada alasan"}
+                </p>
               </div>
 
               <div className="text-sm text-gray-500">
                 <p>Diajukan Pada</p>
                 <p>{reservation.timestamp}</p>
               </div>
+
+              <div className="flex justify-end pt-2 border-t">
+                <button
+                  onClick={() => setSelectedReservation(reservation)}
+                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-full"
+                  title="Lihat Detail"
+                >
+                  <Eye className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
         ))}
       </div>
 
+      {/* Detail Modal */}
       <DetailModal
         reservation={selectedReservation}
         onClose={() => setSelectedReservation(null)}
