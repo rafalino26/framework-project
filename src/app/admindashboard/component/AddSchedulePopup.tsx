@@ -10,86 +10,111 @@ type AddSchedulePopupProps = {
   onAddSchedule: (newSchedule: any) => void;
 };
 
-// ... (Type ScheduleItem dan Room bisa disesuaikan atau dihapus jika tidak digunakan di luar)
+type ScheduleItem = {
+  room_code: string;
+  // bisa tambah properti lain sesuai respons API
+};
 
 export default function AddSchedulePopup({
   isOpen,
   onClose,
   onAddSchedule,
 }: AddSchedulePopupProps) {
-  // 1. Update state agar lebih sesuai dengan nama field API baru
   const [formData, setFormData] = useState({
     courseCode: "",
     courseName: "",
-    lecturerName: "", // Diubah dari lecturer
+    lecturer: "",
     day: "",
     timeRange: "",
     roomCode: "",
-    semesterOrdinal: "", // Diubah dari semester
+    semester: "",
   });
 
   const [rooms, setRooms] = useState<string[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [errorRooms, setErrorRooms] = useState<string | null>(null);
 
-  useEffect(() => {
-    // ... (Logika untuk fetch rooms tidak berubah)
-    if (isOpen) {
-      setLoadingRooms(true);
-      type Room = { roomCode: string; /* ... properti lain */ };
-      api
-        .get<Room[]>("/rooms/current-status")
-        .then((res) => {
-          const roomCodes = res.data.map((room) => room.roomCode);
-          setRooms(Array.from(new Set(roomCodes)));
-          setLoadingRooms(false);
-        })
-        .catch(() => {
-          setErrorRooms("Gagal mengambil data ruangan");
-          setLoadingRooms(false);
-        });
-    }
-  }, [isOpen]);
+  // Fungsi bantu cari tanggal terdekat berdasarkan hari dalam seminggu
+  function getUpcomingDateByDay(day: string) {
+    const daysMap: { [key: string]: number } = {
+      Senin: 1,
+      Selasa: 2,
+      Rabu: 3,
+      Kamis: 4,
+      Jumat: 5,
+      Sabtu: 6,
+      Minggu: 0,
+    };
+    const targetDay = daysMap[day];
+    if (targetDay === undefined) return new Date().toISOString().slice(0, 10);
 
-  // 2. Logika diubah total untuk membuat payload baru
+    const now = new Date();
+    const diff = (targetDay + 7 - now.getDay()) % 7 || 7;
+    const nextDay = new Date(now);
+    nextDay.setDate(now.getDate() + diff);
+    return nextDay.toISOString().slice(0, 10);
+  }
+
+useEffect(() => {
+  if (isOpen) {
+    setLoadingRooms(true);
+    type Room = {
+      roomId: string;
+      roomCode: string;
+      roomName: string;
+      status: string;
+      capacity: number;
+      rating: number;
+      courseName: string | null;
+      lecturerName: string | null;
+      scheduleStartTime: string | null;
+      scheduleEndTime: string | null;
+    };
+    api
+      .get<Room[]>("/rooms/current-status")
+      .then((res) => {
+        const roomCodes = res.data.map((room) => room.roomCode);
+        const uniqueRoomCodes = Array.from(new Set(roomCodes));
+        setRooms(uniqueRoomCodes);
+        setLoadingRooms(false);
+      })
+      .catch(() => {
+        setErrorRooms("Gagal mengambil data ruangan");
+        setLoadingRooms(false);
+      });
+  }
+}, [isOpen]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.day || !formData.timeRange.includes(" - ")) {
-      alert("Mohon isi hari dan waktu dengan format benar (contoh: 09:00 - 11:00)");
+      alert("Mohon isi hari dan waktu dengan format benar (contoh: 08:00 - 10:00)");
       return;
     }
 
-    // Ambil startTime dan endTime dari timeRange
-    const [startTime, endTime] = formData.timeRange.split(" - ").map(time => time.trim());
+    const [start, end] = formData.timeRange.split(" - ");
+    const selectedDate = getUpcomingDateByDay(formData.day);
+    const scheduleStartTime = new Date(`${selectedDate}T${start}:00`).toISOString();
+    const scheduleEndTime = new Date(`${selectedDate}T${end}:00`).toISOString();
 
-    // Mapping hari ke angka (dayOfWeek)
-    const daysMap: { [key: string]: number } = {
-      Senin: 1, Selasa: 2, Rabu: 3, Kamis: 4, Jumat: 5, Sabtu: 6, Minggu: 7, // Sesuaikan angka dengan API Anda
-    };
-    const dayOfWeek = daysMap[formData.day];
-
-    // Buat payload sesuai struktur baru
     const payload = {
       courseName: formData.courseName,
       courseCode: formData.courseCode,
+      lecturer: formData.lecturer,
+      scheduleStartTime,
+      scheduleEndTime,
       roomCode: formData.roomCode,
-      lecturerName: formData.lecturerName,
-      semesterOrdinal: Number(formData.semesterOrdinal),
-      dayOfWeek: dayOfWeek,
-      startTime: startTime,
-      endTime: endTime,
+      semester: Number(formData.semester),
     };
 
     try {
-      // 3. Panggil endpoint baru
-      const res = await api.post("/academic-schedule", payload);
+      const res = await api.post("/schedule", payload);
       onAddSchedule(res.data);
-      onClose(); // Tutup popup setelah sukses
-      alert("Jadwal berhasil ditambahkan!");
+      onClose();
     } catch (error) {
-      console.error("Gagal menambahkan jadwal:", error);
-      alert("Terjadi kesalahan saat menambahkan jadwal. Periksa kembali data Anda.");
+      console.error(error);
+      alert("Terjadi kesalahan saat menambahkan jadwal");
     }
   };
 
@@ -105,42 +130,48 @@ export default function AddSchedulePopup({
           </button>
         </div>
 
-        {/* 4. Sesuaikan value dan onChange pada form Dosen & Semester */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Input Kode MK (tidak berubah) */}
           <div>
             <label className="block text-sm font-medium mb-1">Kode MK</label>
-            <input type="text" required className="w-full px-3 py-2 border border-gray-200 rounded-md"
+            <input
+              type="text"
+              required
+              className="w-full px-3 py-2 border border-gray-200 rounded-md"
               value={formData.courseCode}
               onChange={(e) => setFormData({ ...formData, courseCode: e.target.value })}
-              placeholder="BD"
+              placeholder="PWL-001"
             />
           </div>
 
-          {/* Input Nama MK (tidak berubah) */}
           <div>
             <label className="block text-sm font-medium mb-1">Nama MK</label>
-            <input type="text" required className="w-full px-3 py-2 border border-gray-200 rounded-md"
+            <input
+              type="text"
+              required
+              className="w-full px-3 py-2 border border-gray-200 rounded-md"
               value={formData.courseName}
               onChange={(e) => setFormData({ ...formData, courseName: e.target.value })}
-              placeholder="Big Data"
+              placeholder="Pemrograman Web Lanjut"
             />
           </div>
 
-          {/* Input Dosen (diperbarui) */}
           <div>
             <label className="block text-sm font-medium mb-1">Dosen</label>
-            <input type="text" required className="w-full px-3 py-2 border border-gray-200 rounded-md"
-              value={formData.lecturerName}
-              onChange={(e) => setFormData({ ...formData, lecturerName: e.target.value })}
-              placeholder="Rizal"
+            <input
+              type="text"
+              required
+              className="w-full px-3 py-2 border border-gray-200 rounded-md"
+              value={formData.lecturer}
+              onChange={(e) => setFormData({ ...formData, lecturer: e.target.value })}
+              placeholder="Dr. Ani Wijaya"
             />
           </div>
 
-          {/* Input Hari (tidak berubah) */}
           <div>
             <label className="block text-sm font-medium mb-1">Hari</label>
-            <select required className="w-full px-3 py-2 border border-gray-200 rounded-md"
+            <select
+              required
+              className="w-full px-3 py-2 border border-gray-200 rounded-md"
               value={formData.day}
               onChange={(e) => setFormData({ ...formData, day: e.target.value })}
             >
@@ -153,45 +184,68 @@ export default function AddSchedulePopup({
             </select>
           </div>
 
-          {/* Input Waktu (tidak berubah) */}
           <div>
             <label className="block text-sm font-medium mb-1">Waktu (HH:mm - HH:mm)</label>
-            <input type="text" required className="w-full px-3 py-2 border border-gray-200 rounded-md"
+            <input
+              type="text"
+              required
+              className="w-full px-3 py-2 border border-gray-200 rounded-md"
               value={formData.timeRange}
               onChange={(e) => setFormData({ ...formData, timeRange: e.target.value })}
-              placeholder="07:00 - 08:40"
+              placeholder="09:00 - 11:00"
             />
           </div>
 
-          {/* Input Ruangan (tidak berubah) */}
+          {/* Ruangan (dropdown) */}
           <div>
             <label className="block text-sm font-medium mb-1">Ruangan</label>
-            {loadingRooms ? <p>Memuat ruangan...</p> : errorRooms ? <p className="text-red-500">{errorRooms}</p> : (
-              <select required className="w-full px-3 py-2 border border-gray-200 rounded-md"
+            {loadingRooms ? (
+              <p>Loading rooms...</p>
+            ) : errorRooms ? (
+              <p className="text-red-500">{errorRooms}</p>
+            ) : (
+              <select
+                required
+                className="w-full px-3 py-2 border border-gray-200 rounded-md"
                 value={formData.roomCode}
-                onChange={(e) => setFormData({ ...formData, roomCode: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, roomCode: e.target.value })
+                }
               >
                 <option value="">Pilih Ruangan</option>
-                {rooms.map((room) => ( <option key={room} value={room}>{room}</option> ))}
+                {rooms.map((room) => (
+                  <option key={room} value={room}>
+                    {room}
+                  </option>
+                ))}
               </select>
             )}
           </div>
 
-          {/* Input Semester (diperbarui) */}
           <div>
             <label className="block text-sm font-medium mb-1">Semester</label>
-            <input type="number" required className="w-full px-3 py-2 border border-gray-200 rounded-md"
-              value={formData.semesterOrdinal}
-              onChange={(e) => setFormData({ ...formData, semesterOrdinal: e.target.value })}
-              placeholder="6"
+            <input
+              type="number"
+              required
+              className="w-full px-3 py-2 border border-gray-200 rounded-md"
+              value={formData.semester}
+              onChange={(e) => setFormData({ ...formData, semester: e.target.value })}
+              placeholder="4"
             />
           </div>
 
           <div className="flex justify-end gap-2 mt-6">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-200 rounded-md hover:bg-gray-50">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-200 rounded-md hover:bg-gray-50"
+            >
               Batal
             </button>
-            <button type="submit" className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800">
+            <button
+              type="submit"
+              className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800"
+            >
               Simpan
             </button>
           </div>

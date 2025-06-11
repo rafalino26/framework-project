@@ -1,26 +1,46 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { FiChevronDown } from "react-icons/fi"
 import { FaBook, FaUser, FaClock, FaMapMarkerAlt, FaCalendarAlt } from "react-icons/fa";
 import PrintButton from "../component/PrintButton";
+import api from "@/app/services/api"; // Pastikan path ini benar
+import dayjs from "dayjs";
+import "dayjs/locale/id";
+dayjs.locale("id");
 
-const courses = [
-  { id: "MK001", name: "Algoritma dan Pemrograman", lecturer: "Dr. Budi Santoso", time: "Senin, 08:00 - 10:30", room: "JTE-01", semester: "1", day: "Senin" },
-  { id: "MK002", name: "Basis Data", lecturer: "Prof. Siti Rahayu", time: "Selasa, 13:00 - 15:30", room: "JTE-02", semester: "2", day: "Selasa" },
-  { id: "MK003", name: "Jaringan Komputer", lecturer: "Dr. Ahmad Wijaya", time: "Rabu, 10:00 - 12:30", room: "JTE-03", semester: "3", day: "Rabu" },
-  { id: "MK004", name: "Kecerdasan Buatan", lecturer: "Dr. Maya Putri", time: "Kamis, 08:00 - 10:30", room: "JTE-04", semester: "4", day: "Kamis" },
-  { id: "MK005", name: "Sistem Operasi", lecturer: "Prof. Darmawan", time: "Jumat, 13:00 - 15:30", room: "JTE-05", semester: "5", day: "Jumat" },
-  { id: "MK006", name: "Pemrograman Web", lecturer: "Prof. Darmawan", time: "Senin, 13:00 - 15:30", room: "JTE-05", semester: "6", day: "Senin" },
-  { id: "MK007", name: "Cyber Security", lecturer: "Prof. Darmawan", time: "Selasa, 13:00 - 15:30", room: "JTE-05", semester: "7", day: "Selasa" },
-  { id: "MK008", name: "Praktikum Cyber", lecturer: "Prof. Darmawan", time: "Rabu, 13:00 - 15:30", room: "JTE-05", semester: "8", day: "Rabu" },
-]
+// Definisikan tipe data untuk hasil fetch (opsional, tapi praktik yang baik)
+interface ScheduleItem {
+  id: string;
+  course_name: string;
+  lecturer_name: string;
+  schedule_start_time: string;
+  schedule_end_time: string;
+  room_code: string | null;
+  room_name: string | null;
+  semester: number;
+}
+
+// Definisikan tipe data untuk UI
+interface Course {
+  id: string;
+  name: string;
+  lecturer: string;
+  time: string;
+  room: string;
+  semester: string;
+  day: string;
+}
 
 export default function SchedulePage() {
-  const [selectedCourses, setSelectedCourses] = useState<string[]>([])
-  const [semester, setSemester] = useState("all")
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState("courses"); 
+  // 1. Ganti data statis dengan useState
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoading, setIsLoading] = useState(true); // State untuk loading
+  
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+  const [semester, setSemester] = useState("all");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("courses");
 
   const semesters = [
     { value: "all", label: "Semua Semester" },
@@ -32,16 +52,54 @@ export default function SchedulePage() {
     { value: "6", label: "Semester 6" },
     { value: "7", label: "Semester 7" },
     { value: "8", label: "Semester 8" },
-  ]
+  ];
 
-  const days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
+  const days = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
 
   const filteredCourses = semester === "all" ? courses : courses.filter((course) => course.semester === semester);
   const selectedCourseDetails = courses.filter((course) => selectedCourses.includes(course.id));
 
   const handleCourseToggle = (courseId: string) => {
-    setSelectedCourses((prev) => (prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId]))
-  }
+    setSelectedCourses((prev) => (prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId]));
+  };
+
+  // 2. Buat fungsi untuk fetch dan format data
+  const fetchSchedule = async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.get<ScheduleItem[]>("/schedule");
+      const data = response.data;
+
+      const formattedCourses = data.map((item) => {
+        const start = dayjs(item.schedule_start_time);
+        const end = dayjs(item.schedule_end_time);
+        
+        return {
+          id: item.id,
+          name: item.course_name,
+          lecturer: item.lecturer_name ?? "Belum ada dosen",
+          // Waktu dipisah agar fleksibel untuk ditampilkan di beberapa tempat
+          time: `${start.format("HH:mm")} - ${end.format("HH:mm")}`,
+          room: item.room_code ?? item.room_name ?? "-",
+          semester: String(item.semester),
+          // Buat properti 'day' untuk filtering
+          day: start.format("dddd"),
+        };
+      });
+
+      setCourses(formattedCourses);
+    } catch (error) {
+      console.error("Gagal memuat data jadwal:", error);
+      // Anda bisa menambahkan state error untuk ditampilkan di UI jika perlu
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 3. Panggil fetchSchedule saat komponen pertama kali dimuat
+  useEffect(() => {
+    fetchSchedule();
+  }, []);
 
   return (
     <div className="text-black space-y-6">
