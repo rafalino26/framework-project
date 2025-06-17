@@ -1,31 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { loginUser } from "@/app/services/auth";
 import { FaEye, FaEyeSlash, FaSpinner } from "react-icons/fa";
 
+type FieldName = 'email' | 'password';
+
 export default function LoginPage() {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [serverError, setServerError] = useState("");
+  const [formErrors, setFormErrors] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isFormValid, setIsFormValid] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    if (!email || !password) {
-      setError("Email dan password wajib diisi.");
-      setLoading(false);
-      return;
+  const validateField = (name: FieldName, value: string): string => {
+    let error = "";
+    if (name === "email") {
+      if (value && !/\S+@\S+\.\S+/.test(value)) {
+        error = "Format email tidak valid.";
+      }
+    } else if (name === "password") {
+      if (value && !/^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(value)) {
+        error = "Password minimal 8 karakter, harus mengandung huruf dan angka.";
+      }
     }
+    return error;
+  };
+
+  useEffect(() => {
+    const emailError = validateField("email", email);
+    const passwordError = validateField("password", password);
+    setFormErrors({ email: emailError, password: passwordError });
+
+    if (!emailError && !passwordError && email && password) {
+      setIsFormValid(true);
+    } else {
+      setIsFormValid(false);
+    }
+  }, [email, password]);
+
+  const handleLogin = async (e: FormEvent) => {
+    e.preventDefault();
+
+    if (!isFormValid) {
+        setServerError("Form belum valid. Harap periksa kembali input Anda.");
+        return;
+    }
+
+    setServerError("");
+    setLoading(true);
 
     try {
       const data = await loginUser(email, password);
@@ -38,8 +68,12 @@ export default function LoginPage() {
       } else {
         router.push("/dashboard");
       }
-    } catch (err: any) {
-      setError(err.message || "Login gagal");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setServerError(err.message || "Email atau password salah.");
+      } else {
+        setServerError("Terjadi kesalahan yang tidak diketahui.");
+      }
     } finally {
       setLoading(false);
     }
@@ -56,39 +90,43 @@ export default function LoginPage() {
           </div>
 
           <p className="text-black text-sm mb-6">See your growth and get support!</p>
-{error && (
-  <p className="text-red-500 text-sm mb-4">{error}</p>
-)}
+          
+          {serverError && (
+            <p className="text-red-500 text-sm mb-4 bg-red-100 p-2 rounded">{serverError}</p>
+          )}
 
-          {/* Form Login */}
-          <form onSubmit={handleLogin}>
+          <form onSubmit={handleLogin} noValidate>
             <label className="text-sm font-medium text-black">Email*</label>
             <input
               type="email"
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-2 mt-1 mb-4 border rounded-md text-black bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className={`w-full p-2 mt-1 mb-1 border rounded-md text-black bg-gray-200 focus:outline-none focus:ring-2 ${formErrors.email ? 'border-red-500 focus:ring-red-400' : 'focus:ring-blue-400'}`}
             />
+            {formErrors.email && <p className="text-red-500 text-xs mb-3">{formErrors.email}</p>}
 
-            <label className="text-sm font-medium text-black">Password*</label>
+
+            <label className="text-sm font-medium text-black mt-4">Password*</label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-2 pr-10 mt-1 mb-4 border rounded-md text-black bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className={`w-full p-2 pr-10 mt-1 mb-1 border rounded-md text-black bg-gray-200 focus:outline-none focus:ring-2 ${formErrors.password ? 'border-red-500 focus:ring-red-400' : 'focus:ring-blue-400'}`}
               />
               <div
-                className="absolute right-3 top-6.5 transform -translate-y-1/2 text-gray-600 cursor-pointer"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 cursor-pointer"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </div>
             </div>
+            {formErrors.password && <p className="text-red-500 text-xs mb-3">{formErrors.password}</p>}
 
-            <div className="flex justify-between items-center text-sm mb-4 text-black">
+
+            <div className="flex justify-between items-center text-sm my-4 text-black">
               <div>
                 <input type="checkbox" id="remember" className="mr-2" />
                 <label htmlFor="remember">Remember me</label>
@@ -100,8 +138,8 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full bg-[#101540] text-white p-2 rounded-2xl hover:bg-[#131313] flex items-center justify-center"
-              disabled={loading}
+              className="w-full bg-[#101540] text-white p-2 rounded-2xl hover:bg-[#131313] flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
+              disabled={loading || !isFormValid}
             >
               {loading ? (
                 <FaSpinner className="animate-spin mr-2" />
@@ -119,7 +157,7 @@ export default function LoginPage() {
         </div>
 
         {/* Image Container */}
-        <div className="w-full md:w-3/5 bg-white flex items-center justify-center p-4">
+        <div className="w-full md:w-3/5 bg-white hidden md:flex items-center justify-center p-4">
           <Image
             src="/image 3.png"
             alt="Login Illustration"

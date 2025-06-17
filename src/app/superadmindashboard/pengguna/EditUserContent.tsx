@@ -25,7 +25,6 @@ const statuses = ["Semua Status", "Aktif", "Tidak Aktif"];
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedRole, setSelectedRole] = useState("Semua Role");
   const [selectedStatus, setSelectedStatus] = useState("Semua Status");
   const [searchQuery, setSearchQuery] = useState("");
@@ -35,6 +34,7 @@ export default function UserManagementPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isChangeRoleOpen, setIsChangeRoleOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     const fetchUsers = async () => {
